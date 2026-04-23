@@ -338,6 +338,7 @@ input, select, textarea {
 
 	h3 {
 		font-size: 1rem;
+		padding-top: 1.25rem;
 	}
 
 	h4 {
@@ -507,6 +508,7 @@ input, select, textarea {
 		font-weight: 300;
 		letter-spacing: 0.2rem;
 		line-height: 1.5;
+		/*padding-top: 0.75rem;*/
 		margin: 0 0 1rem 0;
 		text-transform: uppercase;
 	}
@@ -1956,4 +1958,30 @@ input[type="number"] {
     max-height: 4rem;
     opacity: 1;
     margin-bottom: 0.75rem;
+}
+
+.paint-type-other-wrap {
+	max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.25s ease, opacity 0.25s ease, margin 0.25s ease;
+}
+
+section.field:has(#paintType [value="other"]:checked) + .paint-type-other-wrap {
+    max-height: 4rem;
+    opacity: 1;
+    margin-bottom: 1.5rem;
+}
+
+.paint-cond-other-wrap {
+	max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.25s ease, opacity 0.25s ease, margin 0.25s ease;
+}
+
+section.field:has(#paintCond [value="other"]:checked) + .paint-cond-other-wrap {
+    max-height: 4rem;
+    opacity: 1;
+    margin-bottom: 1.5rem;
 }

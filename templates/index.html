@@ -721,9 +721,50 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 												<label for="qty-other" class="sr-only">Other anode quantity</label>
 												<input type="number" name="qty_other" id="qty-other" min="1" placeholder="Quantity" />
 											</div>
+										</div>
+
+
+
+
+									</div>
+											<section class="field">
+												<label for="paintType">Existing Paint Type</label>
+												<select name="paintType" id="paintType" required>
+													<option value="">— Select —</option>
+													<option value="antifouling">Antifouling</option>
+													<option value="bariercoating">Barrier Coating</option>
+													<option value="primer">Primer</option>
+													<option value="topcoat">Topcoat</option>
+													<option value="other">Other</option>
+												</select>
+											</section>
+											<div class="paint-type-other-wrap">
+												<label for="paint-type-other" class="sr-only">Describe paint type</label>
+												<input type="text" name="paint-type-other" id="paint-type-other"
+													   placeholder="Describe paint type" />
+											</div>
+											<section class="field">
+												<label for="paintCond">Current paint condition</label>
+												<select name="paintCond" id="paintCond" required>
+													<option value="">— Select —</option>
+													<option value="good">Good</option>
+													<option value="fair">Fair</option>
+													<option value="poor">Poor</option>
+													<option value="peeling">Peeling</option>
+													<option value="blistering">Blistering</option>
+													<option value="other">Other</option>
+												</select>
+											</section>
+											<div class="paint-cond-other-wrap">
+												<label for="paintCond-other" class="sr-only">Describe paint condition</label>
+												<input type="text" name="paintCond-other" id="paintCond-other"
+													   placeholder="Describe paint condition" />
 											</div>
 
-										</div>
+
+
+									<h3 class="major">Consent & Terms</h3>
+									<div class="fields">
 										<div class="field half">
 											<label for="rates"> I agree to the rates posted at [COMPANY NAME].com/rates <b>*</b></label>
 											<select name="rates" id="rates" required>
@@ -732,7 +773,7 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 											</select>
 										</div>
 										<div class="field half">
-											<label for="terms">I agree to all terms and conditions ( [COMPANY NAME].com/terms ) <b>*</b></label>
+											<label for="terms">I agree to all terms and conditions at [COMPANY NAME].com/terms <b>*</b></label>
 											<select name="terms" id="terms" required>
 												<option value="">— Select —</option>
 												<option>Yes</option>
@@ -745,6 +786,9 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 												<option>Yes</option>
 											</select>
 										</div>
+									</div>
+
+
 
 
 								<div>
