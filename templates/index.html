@@ -33,7 +33,7 @@
 							<ul>
 								<li><a href="#intro">Intro</a></li>
 								<li><a href="#services">Services</a></li>
-								<li><a href="#about">About</a></li>
+								<li><a href="#rates">Rates</a></li>
 								<li><a href="#gallery">Gallery</a></li>
 								<li><a href="#contact">Contact</a></li>
 								<li><a href="#estimate">Estimate</a></li>
@@ -170,27 +170,19 @@
 
 							</article>
 
-						<!-- About -->
-							<article id="about">
-								<h2 class="major">About</h2>
-								<span class="image main"><img src="static/images/pier.jpg" alt="" /></span>
-								<p>Lorem ipsum dolor sit amet, consectetur et adipiscing elit. Praesent eleifend dignissim arcu, at eleifend sapien imperdiet ac. Aliquam erat volutpat. Praesent urna nisi, fringila lorem et vehicula lacinia quam. Integer sollicitudin mauris nec lorem luctus ultrices. Aliquam libero et malesuada fames ac ante ipsum primis in faucibus. Cras viverra ligula sit amet ex mollis mattis lorem ipsum dolor sit amet.</p>
-							</article>
-
-
 						<!-- Contact -->
 							<article id="contact">
-								<p>This is not a request for service. Please click <a href="#">here</a> <b>< dont forget to add href<</b> to request hull cleaning service.</p>
+								<p>This is not a request for service. Please click <a href="#schedule"><b>here</b></a> <b>< dont forget to add href<</b> to request hull cleaning service.</p>
 								<h2 class="major">Contact</h2>
-								<form method="post" action="#">
+								<form method="post" action="/contact" id="contactForm">
 									<div class="fields">
 										<div class="field half">
 											<label for="firstName">First name<b>*</b></label>
-											<input type="text" name="name" id="firstName" required/>
+											<input type="text" name="first_name" id="firstName" required/>
 										</div>
 										<div class="field half">
 											<label for="lastName">Last name<b>*</b></label>
-											<input type="text" name="name" id="lastName" required/>
+											<input type="text" name="last_name" id="lastName" required/>
 										</div>
 										<div class="field half">
 											<label for="email">Email<b>*</b></label>
@@ -214,7 +206,6 @@
 									<li><a href="#" class="icon brands fa-twitter"><span class="label">Twitter</span></a></li>
 									<li><a href="#" class="icon brands fa-facebook-f"><span class="label">Facebook</span></a></li>
 									<li><a href="#" class="icon brands fa-instagram"><span class="label">Instagram</span></a></li>
-									<li><a href="#" class="icon brands fa-github"><span class="label">GitHub</span></a></li>
 								</ul>
 							</article>
 
@@ -361,9 +352,9 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 														<p>Heavy fouling</p>
 													</td>
 													<td>
-														<p>* $5/ft</p>
-														<p>* $8/ft</p>
-														<p>* $12/ft</p>
+														<p>* $5/ft LOA</p>
+														<p>* $8/ft LOA</p>
+														<p>* $12/ft LOA</p>
 														<p>+50% to base rate</p>
 													</td>
 												</tr>
@@ -538,38 +529,57 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 
 										<div class="field half">
 											<label for="sched-vessel-name">Vessel Name <b>*</b></label>
-											<input type="text" name="vessel_name" id="sched-vessel-name" placeholder="Sea Spirit" required />
+											<input type="text" name="vessel_name" id="sched-vessel-name" placeholder="e.g. Sea Spirit" required />
+										</div>
+										<div class="field half">
+											<label for="sched-vessel-year">Year <b>*</b></label>
+											<input type="text" name="vessel_year" id="sched-vessel-year" placeholder="e.g. 2019" required/>
 										</div>
 										<div class="field half">
 											<label for="sched-vessel-make">Vessel Make <b>*</b></label>
-											<input type="text" name="vessel_make" id="sched-vessel-make" placeholder="Oceanco" required />
+											<input type="text" name="vessel_make" id="sched-vessel-make" placeholder="e.g. Boston Whaler" required />
 										</div>
 										<div class="field half">
+											<label for="sched-vessel-model">Vessel Model <b>*</b></label>
+											<input type="text" name="vessel_model" id="sched-vessel-model" placeholder="e.g. Montauk 170" required />
+										</div>
+
+										<section class="field half">
 											<label for="sched-vessel-type">Vessel Type <b>*</b></label>
 											<select name="vessel_type" id="sched-vessel-type" required>
 												<option value="">— Select —</option>
 												<option>Yacht</option>
 												<option>Sailboat</option>
 												<option>Powerboat</option>
-												<option>Catamaran</option>
-												<option>Pontoon</option>
-												<option>Tritoon</option>
-												<option>Trimaran</option>
+<!--												<option>Catamaran</option>-->
+<!--												<option>Pontoon</option>-->
+<!--												<option>Tritoon</option>-->
+<!--												<option>Trimaran</option>-->
 												<option>Trawler</option>
-												<option>Other</option>
+												<option value="other">Other</option>
 											</select>
+										</section>
+										<div class="vessel-type-other-wrap">
+											<label for="vessel-type-other" class="sr-only">Describe vessel type</label>
+											<input type="text" name="vesselType-other" id="vessel-type-other"
+												   placeholder="Describe vessel type" />
 										</div>
 
-										<div class="field half">
-											<label for="sched-hull-mat">Vessel Material<b>*</b></label>
+										<section class="field half">
+											<label for="sched-hull-mat">Hull Material<b>*</b></label>
 											<select name="hull_material" id="sched-hull-mat" required>
 												<option value="">— Select —</option>
 												<option>Fiberglass</option>
 												<option>Aluminum</option>
 												<option>Steel</option>
 												<option>Wood</option>
-												<option>Other</option>
+												<option value="other">Other</option>
 											</select>
+										</section>
+										<div class="hull-mat-other-wrap">
+											<label for="sched-hull-mat-other" class="sr-only">Describe hull material</label>
+											<input type="text" name="hullMat-other" id="sched-hull-mat-other"
+												   placeholder="Describe hull material" />
 										</div>
 
 										<div class="field half">
@@ -635,6 +645,7 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 												<input type="text" name="svc_other_detail" id="serviceOther"
 													   placeholder="What's on your mind?" />
 											</div>
+										</div>
 
 										<div class="field">
 											<label for="sched-frequency">Cleaning Frequency (if scheduling recurring service)</label>
@@ -677,58 +688,59 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 													   placeholder="Describe your anode material" />
 											</div>
 
-											<!-- Location -->
+
+												<!-- Location -->
 											<div class="field">
 												<label>Anode location <b>*</b></label>
 
 												<div class="sched-check-row">
-												<input type="checkbox" id="anode-loc-keel" name="anode_loc_keel" value="keel" />
-												<label for="anode-loc-keel">Keel / Hull anode</label>
-											</div>
-											<div class="anode-qty-wrap" id="qty-keel-wrap">
-												<label for="qty-keel" class="sr-only">Keel / Hull anode quantity</label>
-												<input type="number" name="qty_keel" id="qty-keel" min="1" placeholder="Quantity" />
-											</div>
+													<input type="checkbox" id="anode-loc-keel" name="anode_loc_keel" value="keel" />
+													<label for="anode-loc-keel">Keel / Hull anode</label>
+												</div>
+												<div class="anode-qty-wrap" id="qty-keel-wrap">
+													<label for="qty-keel" class="sr-only">Keel / Hull anode quantity</label>
+													<input type="number" name="qty_keel" id="qty-keel" min="1" placeholder="Quantity" />
+												</div>
 
-											<div class="sched-check-row">
-												<input type="checkbox" id="anode-loc-shaft" name="anode_loc_shaft" value="shaft" />
-												<label for="anode-loc-shaft">Prop shaft anode</label>
-											</div>
-											<div class="anode-qty-wrap" id="qty-shaft-wrap">
-												<label for="qty-shaft" class="sr-only">Prop shaft anode quantity</label>
-												<input type="number" name="qty_shaft" id="qty-shaft" min="1" placeholder="Quantity" />
-											</div>
+												<div class="sched-check-row">
+													<input type="checkbox" id="anode-loc-shaft" name="anode_loc_shaft" value="shaft" />
+													<label for="anode-loc-shaft">Prop shaft anode</label>
+												</div>
+												<div class="anode-qty-wrap" id="qty-shaft-wrap">
+													<label for="qty-shaft" class="sr-only">Prop shaft anode quantity</label>
+													<input type="number" name="qty_shaft" id="qty-shaft" min="1" placeholder="Quantity" />
+												</div>
 
-											<div class="sched-check-row">
-												<input type="checkbox" id="anode-loc-rudder" name="anode_loc_rudder" value="rudder" />
-												<label for="anode-loc-rudder">Rudder anode</label>
-											</div>
-											<div class="anode-qty-wrap" id="qty-rudder-wrap">
-												<label for="qty-rudder" class="sr-only">Rudder anode quantity</label>
-												<input type="number" name="qty_rudder" id="qty-rudder" min="1" placeholder="Quantity" />
-											</div>
+												<div class="sched-check-row">
+													<input type="checkbox" id="anode-loc-rudder" name="anode_loc_rudder" value="rudder" />
+													<label for="anode-loc-rudder">Rudder anode</label>
+												</div>
+												<div class="anode-qty-wrap" id="qty-rudder-wrap">
+													<label for="qty-rudder" class="sr-only">Rudder anode quantity</label>
+													<input type="number" name="qty_rudder" id="qty-rudder" min="1" placeholder="Quantity" />
+												</div>
 
-											<div class="sched-check-row">
-												<input type="checkbox" id="anode-loc-other" name="anode_loc_other" value="other" />
-												<label for="anode-loc-other">Other</label>
-											</div>
-											<div class="anode-location-other-wrap">
-												<label for="anode-location-other" class="sr-only">Describe anode location</label>
-												<input type="text" name="anode_location_other" id="anode-location-other"
-													   placeholder="Describe anode location" />
-											</div>
-											<div class="anode-qty-wrap" id="qty-other-wrap">
-												<label for="qty-other" class="sr-only">Other anode quantity</label>
-												<input type="number" name="qty_other" id="qty-other" min="1" placeholder="Quantity" />
+												<div class="sched-check-row">
+													<input type="checkbox" id="anode-loc-other" name="anode_loc_other" value="other" />
+													<label for="anode-loc-other">Other</label>
+												</div>
+												<div class="anode-location-other-wrap">
+													<label for="anode-location-other" class="sr-only">Describe anode location</label>
+													<input type="text" name="anode_location_other" id="anode-location-other"
+														   placeholder="Describe anode location" />
+												</div>
+												<div class="anode-qty-wrap" id="qty-other-wrap">
+													<label for="qty-other" class="sr-only">Other anode quantity</label>
+													<input type="number" name="qty_other" id="qty-other" min="1" placeholder="Quantity" />
+												</div>
 											</div>
 										</div>
 
 
-
-
 									</div>
-											<section class="field">
-												<label for="paintType">Existing Paint Type</label>
+										<div class="fields">
+											<section class="field half">
+												<label for="paintType">Existing Paint Type <b>*</b></label>
 												<select name="paintType" id="paintType" required>
 													<option value="">— Select —</option>
 													<option value="antifouling">Antifouling</option>
@@ -738,13 +750,14 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 													<option value="other">Other</option>
 												</select>
 											</section>
+
 											<div class="paint-type-other-wrap">
 												<label for="paint-type-other" class="sr-only">Describe paint type</label>
 												<input type="text" name="paint-type-other" id="paint-type-other"
 													   placeholder="Describe paint type" />
 											</div>
-											<section class="field">
-												<label for="paintCond">Current paint condition</label>
+											<section class="field half">
+												<label for="paintCond">Current paint condition <b>*</b></label>
 												<select name="paintCond" id="paintCond" required>
 													<option value="">— Select —</option>
 													<option value="good">Good</option>
@@ -760,26 +773,26 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 												<input type="text" name="paintCond-other" id="paintCond-other"
 													   placeholder="Describe paint condition" />
 											</div>
-
+										</div>
 
 
 									<h3 class="major">Consent & Terms</h3>
 									<div class="fields">
-										<div class="field half">
-											<label for="rates"> I agree to the rates posted at [COMPANY NAME].com/rates <b>*</b></label>
-											<select name="rates" id="rates" required>
+										<div class="field">
+											<label for="rates_agree"> I agree to the rates posted at [COMPANY NAME].com/rates <b>*</b></label>
+											<select name="rates" id="rates_agree" required>
 												<option value="">— Select —</option>
 												<option value="">Yes</option>
 											</select>
 										</div>
-										<div class="field half">
+										<div class="field">
 											<label for="terms">I agree to all terms and conditions at [COMPANY NAME].com/terms <b>*</b></label>
 											<select name="terms" id="terms" required>
 												<option value="">— Select —</option>
 												<option>Yes</option>
 											</select>
 										</div>
-										<div class="field half">
+										<div class="field">
 											<label for="authorization">Diver Access Authorization: I authorize [COMPANY NAME] to access the vessel and surrounding areas for cleaning, anode replacement or any type of work, related to vessel. (Print name and date) <b>*</b></label>
 											<select name="authorization" id="authorization" required>
 												<option value="">— Select —</option>
@@ -791,37 +804,39 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 
 
 
-								<div>
-									<!-- ────── Scheduling preference ────── -->
-									<h3 class="major">Preferred Schedule</h3>
-									<div class="fields">
+<!--								<div>-->
+<!--									&lt;!&ndash; ────── Scheduling preference ────── &ndash;&gt;-->
+<!--									<h3 class="major">Preferred Schedule</h3>-->
+<!--									<div class="fields">-->
 
-										<div class="field half">
-											<label for="sched-date">Preferred Date <b>*</b></label>
-											<input type="date" name="preferred_date" id="sched-date" required />
-										</div>
-										<div class="field half">
-											<label for="sched-alt-date">Alternate Date</label>
-											<input type="date" name="alt_date" id="sched-alt-date" />
-										</div>
+<!--										<div class="field half">-->
+<!--											<label for="sched-date">Preferred Date <b>*</b></label>-->
+<!--											<input type="date" name="preferred_date" id="sched-date" required />-->
+<!--										</div>-->
+<!--										<div class="field half">-->
+<!--											<label for="sched-alt-date">Alternate Date</label>-->
+<!--											<input type="date" name="alt_date" id="sched-alt-date" />-->
+<!--										</div>-->
 
-										<div class="field">
-											<label for="sched-window">Preferred Time Window</label>
-											<select name="time_window" id="sched-window">
-												<option value="">— No preference —</option>
-												<option>Morning (7 am – 11 am)</option>
-												<option>Midday (11 am – 2 pm)</option>
-												<option>Afternoon (2 pm – 5 pm)</option>
-											</select>
-										</div>
+<!--										<div class="field">-->
+<!--											<label for="sched-window">Preferred Time Window</label>-->
+<!--											<select name="time_window" id="sched-window">-->
+<!--												<option value="">— No preference —</option>-->
+<!--												<option>Morning (7 am – 11 am)</option>-->
+<!--												<option>Midday (11 am – 2 pm)</option>-->
+<!--												<option>Afternoon (2 pm – 5 pm)</option>-->
+<!--											</select>-->
+<!--										</div>-->
 
-										<div class="field">
-											<label for="sched-notes">Additional Notes / Special Instructions</label>
-											<textarea name="notes" id="sched-notes" rows="4"
-													  placeholder="Describe any known damage, fouling level, access instructions, gate codes, etc."></textarea>
-										</div>
+<!--									</div>-->
 
+									<h3 class="major" id="notes-heading">Additional Notes / Special Instructions</h3>
+									<div class="field">
+										<textarea name="notes" id="sched-notes" rows="4"
+												  aria-labelledby="notes-heading"
+												  placeholder="Describe any known damage, fouling level, access instructions, gate codes, etc."></textarea>
 									</div>
+
 
 									<!-- ── How did you hear about us ── -->
 									<div class="fields">
@@ -838,11 +853,14 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 											</select>
 										</div>
 									</div>
-</div>
+
+
 									<ul class="actions">
 										<li><input type="submit" value="Request Appointment" class="primary" /></li>
 										<li><input type="reset"  value="Clear Form" /></li>
 									</ul>
+
+
 
 								</form>
 
@@ -854,7 +872,117 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 
 							</article>
 							<!-- End #schedule article -->
+							<!-- Rates -->
+							<article id="rates">
+								<h2 class="major">Rates</h2>
 
+								<div class="table-wrapper">
+									<table class="alt">
+										<thead>
+											<tr>
+												<th>Service</th>
+												<th>Description</th>
+												<th>Base Rate</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr>
+												<td>Hull Cleaning</td>
+												<td>
+													<p>0–39 ft</p>
+													<p>40–79 ft</p>
+													<p>80+ ft</p>
+												</td>
+												<td>
+													<p>$5/ ft LOA</p>
+													<p>$8/ ft LOA</p>
+													<p>$12/ ft LOA</p>
+												</td>
+											</tr>
+											<tr>
+												<td>Anode Replacement</td>
+												<td>Per anode</td>
+												<td>$50/ea</td>
+											</tr>
+											<tr>
+												<td>Propeller Replacement</td>
+												<td>
+													<p>Fixed-Blade Propeller</p>
+													<p>Folding Propeller</p>
+													<p>Feathering Propeller</p>
+												</td>
+												<td>
+													<p>$25/inch diam</p>
+													<p>$30/inch diam</p>
+													<p>Coming soon</p>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+
+								<h3 class="major">Fouling Surcharges</h3>
+								<p>Applied on top of the hull cleaning base rate depending on growth encountered.</p>
+
+								<div class="table-wrapper">
+									<table class="alt">
+										<thead>
+											<tr>
+												<th>Fouling Level</th>
+												<th>Typical Growth</th>
+												<th>Rate Adjustment</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr>
+												<td>Light</td>
+												<td>Slime</td>
+												<td>Base rate</td>
+											</tr>
+											<tr>
+												<td>Moderate</td>
+												<td>Weed, seaweed</td>
+												<td>Base rate + 25%</td>
+											</tr>
+											<tr>
+												<td>Excessive</td>
+												<td>Barnacles, tubeworms</td>
+												<td>Base rate + 75%</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+
+								<h3 class="major">Additional Items</h3>
+								<div class="table-wrapper">
+									<table class="alt">
+										<thead>
+											<tr>
+												<th>Item</th>
+												<th>Description</th>
+												<th>Rate</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr>
+												<td>Crew Mobilization Fee <b>*</b></td>
+												<td>Required at booking</td>
+												<td>$150</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+
+								<h3 class="major">Booking Fee Policy</h3>
+								<p>A <b>Crew Mobilization fee</b> is required to secure your appointment. It covers travel time, gear prep, safety checks, etc. This fee is <strong>not</strong> an additional charge — it is applied toward your final invoice once the work is completed. The final bill will reflect the total cost of services minus the booking fee already paid.</p>
+
+								<p style="font-size:0.75rem; opacity:0.65; text-transform:uppercase; letter-spacing:0.1rem;">
+									All rates are estimates. Final pricing confirmed before work begins.
+									Any work requested beyond the original scope will be discussed and priced separately.
+									No additional work will be performed without customer approval.
+									Approved additions will be billed in addition to the original estimate.
+								</p>
+							</article>
 						<!-- gallery -->
 							<article id="gallery">
 								<h2 class="major">Gallery</h2>
@@ -875,11 +1003,15 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 
 							</article>
 					</div>
-
-				<!-- Footer -->
-					<footer id="footer">
-						<p class="copyright">&copy; Untitled. Design: <a href="https://html5up.net">HTML5 UP</a>.</p>
-					</footer>
+				
+				<footer id="footer">
+					<p class="copyright">&copy; Bluewater Detailing LLC. Design: <a href="https://html5up.net">HTML5 UP</a>.</p>
+					<nav class="legal-links">
+						<a href="/privacy-policy">Privacy Policy</a>
+						<span class="legal-sep">&middot;</span>
+						<a href="/terms-of-service">Terms of Service</a>
+					</nav>
+				</footer>
 
 			</div>
 
@@ -892,6 +1024,27 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 			<script src="static/assets/js/breakpoints.min.js"></script>
 			<script src="static/assets/js/util.js"></script>
 			<script src="static/assets/js/main.js"></script>
+
+			<script>
+				// ── Contact form ──────────────────────────────────────────────
+				const contactForm = document.getElementById('contactForm');
+				if (contactForm) {
+				  contactForm.addEventListener('submit', async (e) => {
+					e.preventDefault();
+					const btn = contactForm.querySelector('[type=submit]');
+					const orig = btn.value;
+					btn.value = 'Sending…'; btn.disabled = true;
+
+					try {
+					  const res  = await fetch('/contact', { method: 'POST', body: new FormData(contactForm) });
+					  const data = await res.json();
+					  alert(res.ok ? data.message : (data.errors || ['Something went wrong.']).join('\n'));
+					  if (res.ok) contactForm.reset();
+					} catch { alert('Network error – please try again.'); }
+					finally  { btn.value = orig; btn.disabled = false; }
+				  });
+				}
+			</script>
 
 	</body>
 </html>
