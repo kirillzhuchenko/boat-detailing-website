@@ -544,6 +544,7 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 											<input type="text" name="vessel_model" id="sched-vessel-model" placeholder="e.g. Montauk 170" required />
 										</div>
 
+
 										<section class="field half">
 											<label for="sched-vessel-type">Vessel Type <b>*</b></label>
 											<select name="vessel_type" id="sched-vessel-type" required>
@@ -558,12 +559,13 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 												<option>Trawler</option>
 												<option value="other">Other</option>
 											</select>
+
+											<div class="vessel-type-other-wrap">
+												<label for="vessel-type-other" class="sr-only">Describe vessel type</label>
+												<input type="text" name="vesselType-other" id="vessel-type-other"
+													   placeholder="Describe vessel type" />
+											</div>
 										</section>
-										<div class="vessel-type-other-wrap">
-											<label for="vessel-type-other" class="sr-only">Describe vessel type</label>
-											<input type="text" name="vesselType-other" id="vessel-type-other"
-												   placeholder="Describe vessel type" />
-										</div>
 
 										<section class="field half">
 											<label for="sched-hull-mat">Hull Material<b>*</b></label>
@@ -575,12 +577,13 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 												<option>Wood</option>
 												<option value="other">Other</option>
 											</select>
+
+											<div class="hull-mat-other-wrap">
+												<label for="sched-hull-mat-other" class="sr-only">Describe hull material</label>
+												<input type="text" name="hullMat-other" id="sched-hull-mat-other"
+													   placeholder="Describe hull material" />
+											</div>
 										</section>
-										<div class="hull-mat-other-wrap">
-											<label for="sched-hull-mat-other" class="sr-only">Describe hull material</label>
-											<input type="text" name="hullMat-other" id="sched-hull-mat-other"
-												   placeholder="Describe hull material" />
-										</div>
 
 										<div class="field half">
 											<label for="sched-loa">Length Overall (ft) <b>*</b></label>
@@ -627,13 +630,18 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 												<label for="svc-anode">Anode Replacement</label>
 											</div>
 											<div class="sched-check-row">
-												<input type="checkbox" id="svc-prop"   name="svc_prop"   value="Propeller Service" />
+												<input type="checkbox" id="svc-prop" name="svc_prop" value="Propeller Service" />
 												<label for="svc-prop">Propeller Removal / Installation</label>
+											</div>
+											<div class="svc-prop-notice">
+												<span class="icon solid fa-info-circle"></span>
+												Plus $150 wet fee, if installation requires separate dive (week after, etc.)
 											</div>
 											<div class="sched-check-row">
 												<input type="checkbox" id="svc-rudder" name="svc_rudder" value="Rudder Service" />
-												<label for="svc-rudder">Rudder Inspection / Replacement</label>
+												<label for="svc-rudder">Rudder Inspection</label>
 											</div>
+
 
 											<div class="sched-check-row">
 												<input type="checkbox" id="svc-other" name="svc_other" value="Other" />
@@ -672,8 +680,8 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 
 											<!-- Material -->
 											<div class="anode-material-wrap field">
-												<label for="anode-material">Anode material <b>*</b></label>
-												<select name="anode_material" id="anode-material">
+												<label for="anode-materal">Anode material <b>*</b></label>
+												<select name="anode_material" id="anode-materal">
 													<option value="">— Select —</option>
 													<option value="zinc">Zinc</option>
 													<option value="aluminum">Aluminum</option>
@@ -736,70 +744,117 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 											</div>
 										</div>
 
+										<div class="field">
+											<label for="prop-inst">Prop installation / removal required? <b>*</b></label>
+											<select name="prop_inst_required" id="prop-inst" required>
+												<option value="">— Select —</option>
+												<option value="yes">Yes</option>
+												<option value="no">No</option>
+											</select>
+										</div>
 
-									</div>
-										<div class="fields">
-											<section class="field half">
-												<label for="paintType">Existing Paint Type <b>*</b></label>
-												<select name="paintType" id="paintType" required>
+										<div class="prop-inst-details-wrap">
+
+											<div class="prop-type-wrap field">
+												<label for="prop-type">Prop type <b>*</b></label>
+												<select name="propType" id="prop-type">
 													<option value="">— Select —</option>
-													<option value="antifouling">Antifouling</option>
-													<option value="bariercoating">Barrier Coating</option>
-													<option value="primer">Primer</option>
-													<option value="topcoat">Topcoat</option>
+													<option value="prop_fixed">Fixed-Blade Propeller</option>
+													<option value="prop_fold">Folding Propeller</option>
+<!--													<option value="prop_feath">Feathering Propeller</option>-->
 													<option value="other">Other</option>
 												</select>
-											</section>
+											</div>
 
+											<div class="prop-inst-type-other-wrap">
+												<label for="prop-type-other" class="sr-only">Describe your propeller type</label>
+												<input type="text" name="prop_other" id="prop-type-other"
+													   placeholder="Describe your propeller type" />
+											</div>
+
+										</div>
+
+
+										<div class="field">
+											<label for="foul-lvl">Current fouling level <b>*</b></label>
+											<select name="fouling_level" id="foul-lvl" required>
+												<option value="">— Select —</option>
+												<option value="light">Light</option>
+												<option value="mod">Moderate</option>
+												<option value="exces">Excessive</option>
+												<option value="other">Other</option>
+											</select>
+										</div>
+
+										<div class="foul-details-wrap">
+											<label for="foul-other" class="sr-only">Describe your fouling level</label>
+											<input type="text" name="fouling_other" id="foul-other"
+												   placeholder="Describe fouling level" />
+										</div>
+									</div>
+
+									<div class="fields">
+										<div class="field half">
+											<label for="paintType">Existing Paint Type <b>*</b></label>
+											<select name="paintType" id="paintType" required>
+												<option value="">— Select —</option>
+												<option value="antifouling">Antifouling</option>
+												<option value="bariercoating">Barrier Coating</option>
+												<option value="primer">Primer</option>
+												<option value="topcoat">Topcoat</option>
+												<option value="other">Other</option>
+											</select>
 											<div class="paint-type-other-wrap">
 												<label for="paint-type-other" class="sr-only">Describe paint type</label>
 												<input type="text" name="paint-type-other" id="paint-type-other"
 													   placeholder="Describe paint type" />
 											</div>
-											<section class="field half">
-												<label for="paintCond">Current paint condition <b>*</b></label>
-												<select name="paintCond" id="paintCond" required>
-													<option value="">— Select —</option>
-													<option value="good">Good</option>
-													<option value="fair">Fair</option>
-													<option value="poor">Poor</option>
-													<option value="peeling">Peeling</option>
-													<option value="blistering">Blistering</option>
-													<option value="other">Other</option>
-												</select>
-											</section>
+										</div>
+
+										<div class="field half">
+											<label for="paintCond">Current paint condition <b>*</b></label>
+											<select name="paintCond" id="paintCond" required>
+												<option value="">— Select —</option>
+												<option value="good">Good</option>
+												<option value="fair">Fair</option>
+												<option value="poor">Poor</option>
+												<option value="peeling">Peeling</option>
+												<option value="blistering">Blistering</option>
+												<option value="other">Other</option>
+											</select>
 											<div class="paint-cond-other-wrap">
 												<label for="paintCond-other" class="sr-only">Describe paint condition</label>
 												<input type="text" name="paintCond-other" id="paintCond-other"
 													   placeholder="Describe paint condition" />
 											</div>
 										</div>
-
-
-									<h3 class="major">Consent & Terms</h3>
-									<div class="fields">
-										<div class="field">
-											<label for="rates_agree"> I agree to the rates posted at [COMPANY NAME].com/rates <b>*</b></label>
-											<select name="rates" id="rates_agree" required>
-												<option value="">— Select —</option>
-												<option value="">Yes</option>
-											</select>
-										</div>
-										<div class="field">
-											<label for="terms">I agree to all terms and conditions at [COMPANY NAME].com/terms <b>*</b></label>
-											<select name="terms" id="terms" required>
-												<option value="">— Select —</option>
-												<option>Yes</option>
-											</select>
-										</div>
-										<div class="field">
-											<label for="authorization">Diver Access Authorization: I authorize [COMPANY NAME] to access the vessel and surrounding areas for cleaning, anode replacement or any type of work, related to vessel. (Print name and date) <b>*</b></label>
-											<select name="authorization" id="authorization" required>
-												<option value="">— Select —</option>
-												<option>Yes</option>
-											</select>
-										</div>
 									</div>
+
+
+<!--									<h3 class="major">Consent & Terms</h3>-->
+<!--									<div class="fields">-->
+<!--										<div class="field">-->
+<!--											<label for="rates_agree"> I agree to the rates posted at [COMPANY NAME].com/rates <b>*</b></label>-->
+<!--											<select name="rates" id="rates_agree" required>-->
+<!--												<option value="">— Select —</option>-->
+<!--												<option value="">Yes</option>-->
+<!--											</select>-->
+<!--										</div>-->
+<!--										<div class="field">-->
+<!--											<label for="terms">I agree to all terms and conditions at [COMPANY NAME].com/terms <b>*</b></label>-->
+<!--											<select name="terms" id="terms" required>-->
+<!--												<option value="">— Select —</option>-->
+<!--												<option>Yes</option>-->
+<!--											</select>-->
+<!--										</div>-->
+<!--										<div class="field">-->
+<!--											<label for="authorization">Diver Access Authorization: I authorize [COMPANY NAME] to access the vessel and surrounding areas for cleaning, anode replacement or any type of work, related to vessel. (Print name and date) <b>*</b></label>-->
+<!--											<select name="authorization" id="authorization" required>-->
+<!--												<option value="">— Select —</option>-->
+<!--												<option>Yes</option>-->
+<!--											</select>-->
+<!--										</div>-->
+<!--									</div>-->
 
 
 
@@ -856,7 +911,7 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 
 
 									<ul class="actions">
-										<li><input type="submit" value="Request Appointment" class="primary" /></li>
+										<li><input type="submit" value="Submit" class="primary" /></li>
 										<li><input type="reset"  value="Clear Form" /></li>
 									</ul>
 
@@ -894,9 +949,9 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 													<p>80+ ft</p>
 												</td>
 												<td>
-													<p>$5/ ft LOA</p>
-													<p>$8/ ft LOA</p>
-													<p>$12/ ft LOA</p>
+													<p>$5/ft LOA</p>
+													<p>$8/ft LOA</p>
+													<p>$12/ft LOA</p>
 												</td>
 											</tr>
 											<tr>
@@ -941,12 +996,12 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 											</tr>
 											<tr>
 												<td>Moderate</td>
-												<td>Weed, seaweed</td>
+												<td>Weed, seaweed, etc.</td>
 												<td>Base rate + 25%</td>
 											</tr>
 											<tr>
 												<td>Excessive</td>
-												<td>Barnacles, tubeworms</td>
+												<td>Barnacles, tubeworms, etc.</td>
 												<td>Base rate + 75%</td>
 											</tr>
 										</tbody>
@@ -967,6 +1022,21 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 											<tr>
 												<td>Crew Mobilization Fee <b>*</b></td>
 												<td>Required at booking</td>
+												<td>$150</td>
+											</tr>
+											<tr>
+												<td>Private Dock</td>
+												<td>Remote access surcharge</td>
+												<td>$25</td>
+											</tr>
+											<tr>
+												<td>Expedited Service</td>
+												<td>You will be moved in a priority list</td>
+												<td>$600</td>
+											</tr>
+											<tr>
+												<td>Wet Fee</td>
+												<td>Charged if prop install requires separate date</td>
 												<td>$150</td>
 											</tr>
 										</tbody>
@@ -1003,7 +1073,7 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 
 							</article>
 					</div>
-				
+
 				<footer id="footer">
 					<p class="copyright">&copy; Bluewater Detailing LLC. Design: <a href="https://html5up.net">HTML5 UP</a>.</p>
 					<nav class="legal-links">

@@ -111,7 +111,7 @@ input, select, textarea {
 
     /* ── Section wrapper ── */
     .services-section {
-      padding: 4rem 2rem;
+      padding: 4rem 0;
       max-width: 1100px;
       margin: 0 auto;
     }
@@ -199,7 +199,7 @@ input, select, textarea {
 
     /* ── Card body ── */
     .service-card .card-body {
-      padding: 1.25rem 1.5rem 1.5rem;
+      padding: 1rem 1rem 1.5rem;
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -1752,6 +1752,8 @@ input, select, textarea {
 
 		}
 
+
+
 /* Footer */
 
 	#footer {
@@ -1881,6 +1883,25 @@ input[type="number"] {
     margin-bottom: 0.75rem;
 }
 
+/* ── Prop wet-fee notice ── */
+.svc-prop-notice {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    margin-left: 2rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.05rem;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.6;
+    transition: max-height 0.25s ease, opacity 0.25s ease, margin 0.25s ease;
+}
+
+.sched-check-row:has(#svc-prop:checked) + .svc-prop-notice {
+    max-height: 3rem;
+    opacity: 1;
+    margin-bottom: 0.6rem;
+}
+
 /* hides visually but keeps it readable by screen readers */
 .sr-only {
     position: absolute;
@@ -1895,6 +1916,7 @@ input[type="number"] {
 
 /* ── Outer wrapper: hidden until Yes is chosen ── */
 .anode-details-wrap {
+	margin-top: 1rem;
     max-height: 0;
     overflow: hidden;
     opacity: 0;
@@ -1962,61 +1984,110 @@ input[type="number"] {
     margin-bottom: 0.75rem;
 }
 
-.paint-type-other-wrap {
-	max-height: 0;
+/*Prop install/replace*/
+/* ── Outer wrapper: hidden until Yes is chosen ── */
+.prop-inst-details-wrap {
+	margin-top: 1rem;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+	flex-basis: 96%;      /* ← take full row */
+    padding-left: 1.5rem;  /* ← match .fields inner spacing */
+}
+
+.field:has(#prop-inst [value="yes"]:checked) + .prop-inst-details-wrap {
+    max-height: 60rem;
+    opacity: 1;
+    margin-bottom: 1.5rem;
+}
+
+.prop-type-wrap:has(#prop-type [value="other"]:checked) + .prop-inst-type-other-wrap {
+	margin-top: 1rem;
+    max-height: 4rem;
+    opacity: 1;
+    margin-bottom: 1.5rem;
+
+}
+
+
+.prop-inst-type-other-wrap {
+    max-height: 0;
     overflow: hidden;
     opacity: 0;
     transition: max-height 0.25s ease, opacity 0.25s ease, margin 0.25s ease;
 }
 
-section.field:has(#paintType [value="other"]:checked) + .paint-type-other-wrap {
+/*Fouling level section*/
+.foul-details-wrap {
+	margin-top: 1rem;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+	flex-basis: 96%;      /* ← take full row */
+    padding-left: 1.5rem;  /* ← match .fields inner spacing */
+}
+
+.field:has(#foul-lvl [value="other"]:checked) + .foul-details-wrap {
     max-height: 4rem;
     opacity: 1;
     margin-bottom: 1.5rem;
+}
+
+
+.paint-type-other-wrap {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.25s ease, opacity 0.25s ease, margin 0.25s ease;
+}
+
+.field:has(#paintType [value="other"]:checked) .paint-type-other-wrap {
+    max-height: 4rem;
+    opacity: 1;
+    margin-top: 0.75rem;
 }
 
 .paint-cond-other-wrap {
-	max-height: 0;
+    max-height: 0;
     overflow: hidden;
     opacity: 0;
     transition: max-height 0.25s ease, opacity 0.25s ease, margin 0.25s ease;
 }
 
-section.field:has(#paintCond [value="other"]:checked) + .paint-cond-other-wrap {
+.field:has(#paintCond [value="other"]:checked) .paint-cond-other-wrap {
     max-height: 4rem;
     opacity: 1;
-    margin-bottom: 1.5rem;
+    margin-top: 0.75rem;
 }
 
 .vessel-type-other-wrap {
-	max-height: 0;
+    max-height: 0;
     overflow: hidden;
     opacity: 0;
     transition: max-height 0.25s ease, opacity 0.25s ease, margin 0.25s ease;
-	flex-basis: 100%;
-    padding-left: 1.5rem;
 }
 
-section.field.half:has(#sched-vessel-type [value="other"]:checked) + .vessel-type-other-wrap {
+section.field.half:has(#sched-vessel-type [value="other"]:checked) .vessel-type-other-wrap {
     max-height: 4rem;
     opacity: 1;
-    margin-bottom: 1.5rem;
+    margin-top: 0.75rem;
 }
 
 .hull-mat-other-wrap {
-	max-height: 0;
+    max-height: 0;
     overflow: hidden;
     opacity: 0;
     transition: max-height 0.25s ease, opacity 0.25s ease, margin 0.25s ease;
-	flex-basis: 100%;
-    padding-left: 1.5rem;
 }
 
-section.field.half:has(#sched-hull-mat [value="other"]:checked) + .hull-mat-other-wrap {
+section.field.half:has(#sched-hull-mat [value="other"]:checked) .hull-mat-other-wrap {
     max-height: 4rem;
     opacity: 1;
-    margin-bottom: 1.5rem;
+    margin-top: 0.75rem;
 }
+
 
 /* ── Legal nav links in footer ── */
 #footer .legal-links {
