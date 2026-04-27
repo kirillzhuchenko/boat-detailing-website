@@ -666,8 +666,34 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 											</select>
 										</div>
 
+										<div class="field half">
+											<label for="priv-dock">Private Dock? <b>*</b></label>
+											<select name="privateDock" id="priv-dock" required>
+												<option value="">— Select —</option>
+												<option value="yes">Yes</option>
+												<option value="no">No</option>
+											</select>
+										</div>
+										<div class="field half">
+											<label for="foul-lvl">Current fouling level <b>*</b></label>
+											<select name="fouling_level" id="foul-lvl" required>
+												<option value="">— Select —</option>
+												<option value="light">Light</option>
+												<option value="mod">Moderate</option>
+												<option value="exces">Excessive</option>
+												<option value="other">Other</option>
+											</select>
+										</div>
+										<div class="field half">
+											<label for="exp-serv">Expedited service? <b>*</b></label>
+											<select name="expService" id="exp-serv" required>
+												<option value="">— Select —</option>
+												<option value="yes">Yes</option>
+												<option value="no">No</option>
+											</select>
+										</div>
 
-										<div class="field">
+										<div class="field half">
 											<label for="anode-rep">Anode required? <b>*</b></label>
 											<select name="anode_required" id="anode-rep" required>
 												<option value="">— Select —</option>
@@ -679,9 +705,9 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 										<div class="anode-details-wrap">
 
 											<!-- Material -->
-											<div class="anode-material-wrap field">
-												<label for="anode-materal">Anode material <b>*</b></label>
-												<select name="anode_material" id="anode-materal">
+											<div class="anode-material-wrap">
+												<label for="anode-material">Anode material <b>*</b></label>
+												<select name="anode_material" id="anode-material">
 													<option value="">— Select —</option>
 													<option value="zinc">Zinc</option>
 													<option value="aluminum">Aluminum</option>
@@ -744,6 +770,8 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 											</div>
 										</div>
 
+
+
 										<div class="field">
 											<label for="prop-inst">Prop installation / removal required? <b>*</b></label>
 											<select name="prop_inst_required" id="prop-inst" required>
@@ -754,37 +782,30 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 										</div>
 
 										<div class="prop-inst-details-wrap">
-
 											<div class="prop-type-wrap field">
-												<label for="prop-type">Prop type <b>*</b></label>
+												<label for="prop-type">Prop Type <b>*</b></label>
 												<select name="propType" id="prop-type">
 													<option value="">— Select —</option>
 													<option value="prop_fixed">Fixed-Blade Propeller</option>
 													<option value="prop_fold">Folding Propeller</option>
-<!--													<option value="prop_feath">Feathering Propeller</option>-->
 													<option value="other">Other</option>
 												</select>
 											</div>
-
 											<div class="prop-inst-type-other-wrap">
 												<label for="prop-type-other" class="sr-only">Describe your propeller type</label>
 												<input type="text" name="prop_other" id="prop-type-other"
 													   placeholder="Describe your propeller type" />
 											</div>
 
+											<div class="prop-diam-wrap field">
+												<label for="prop-diam">Diameter (inches)</label>
+												<input type="number" name="propDiam" id="prop-diam" placeholder="e.g. 17" min="0" />
+											</div>
+
 										</div>
 
 
-										<div class="field">
-											<label for="foul-lvl">Current fouling level <b>*</b></label>
-											<select name="fouling_level" id="foul-lvl" required>
-												<option value="">— Select —</option>
-												<option value="light">Light</option>
-												<option value="mod">Moderate</option>
-												<option value="exces">Excessive</option>
-												<option value="other">Other</option>
-											</select>
-										</div>
+
 
 										<div class="foul-details-wrap">
 											<label for="foul-other" class="sr-only">Describe your fouling level</label>
@@ -924,6 +945,8 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 									<li><a href="#" class="icon brands fa-facebook-f"><span class="label">Facebook</span></a></li>
 									<li><a href="#" class="icon brands fa-instagram"><span class="label">Instagram</span></a></li>
 								</ul>
+
+								
 
 							</article>
 							<!-- End #schedule article -->

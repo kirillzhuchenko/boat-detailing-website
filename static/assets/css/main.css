@@ -1937,6 +1937,7 @@ input[type="number"] {
     overflow: hidden;
     opacity: 0;
     transition: max-height 0.25s ease, opacity 0.25s ease, margin 0.25s ease;
+	margin-top: 1rem;
 }
 
 .anode-material-wrap:has(#anode-material [value="other"]:checked) + .anode-other-wrap {
@@ -1987,13 +1988,21 @@ input[type="number"] {
 /*Prop install/replace*/
 /* ── Outer wrapper: hidden until Yes is chosen ── */
 .prop-inst-details-wrap {
-	margin-top: 1rem;
+    margin-top: 1rem;
     max-height: 0;
     overflow: hidden;
     opacity: 0;
     transition: max-height 0.3s ease, opacity 0.3s ease;
-	flex-basis: 96%;      /* ← take full row */
-    padding-left: 1.5rem;  /* ← match .fields inner spacing */
+    flex-basis: 96%;
+    padding-left: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+
+    /* UPDATE: Changed '0' to '1rem' to give spacing between the rows */
+    gap: 1rem 1.5rem;
+
+    /* ADD THIS: Aligns the inputs to the bottom of the row */
+    align-items: flex-end;
 }
 
 .field:has(#prop-inst [value="yes"]:checked) + .prop-inst-details-wrap {
@@ -2002,20 +2011,38 @@ input[type="number"] {
     margin-bottom: 1.5rem;
 }
 
-.prop-type-wrap:has(#prop-type [value="other"]:checked) + .prop-inst-type-other-wrap {
-	margin-top: 1rem;
-    max-height: 4rem;
-    opacity: 1;
-    margin-bottom: 1.5rem;
-
+/* ── Base 50% column widths ── */
+.prop-type-wrap,
+.prop-diam-wrap {
+    flex: 0 0 calc(50% - 0.75rem);
+    /* Adding a transition makes the line-break jump feel a bit smoother */
+    transition: margin 0.3s ease;
 }
 
+/* ── Force a Line Break after Prop Type when 'Other' is checked ── */
+.prop-type-wrap:has(#prop-type option[value="other"]:checked) {
+    /* Fills the exact remaining space of the right column, forcing next items to wrap */
+    margin-right: calc(50% + 0.75rem);
+}
 
+/* ── "Other" Text Field Base State ── */
 .prop-inst-type-other-wrap {
     max-height: 0;
     overflow: hidden;
     opacity: 0;
-    transition: max-height 0.25s ease, opacity 0.25s ease, margin 0.25s ease;
+    flex: 0 0 0; /* Takes up 0 width when hidden so it doesn't break the layout */
+    transition: max-height 0.25s ease, opacity 0.25s ease, flex 0.25s ease;
+}
+
+/* ── "Other" Text Field Active State ── */
+.prop-type-wrap:has(#prop-type option[value="other"]:checked) + .prop-inst-type-other-wrap {
+    max-height: 4rem;
+    opacity: 1;
+    /* Match the exact width of the Diameter field so they sit perfectly side-by-side */
+    flex: 0 0 calc(50% - 0.75rem);
+
+    /* Note: Removed the top/bottom margins you previously had here so
+       this field physically aligns perfectly with the Diameter field next to it. */
 }
 
 /*Fouling level section*/
