@@ -2262,3 +2262,200 @@ section.field.half:has(#sched-hull-mat [value="other"]:checked) .hull-mat-other-
 		padding: 1.5rem 1rem;
 	}
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Floating Estimate Card
+   ═══════════════════════════════════════════════════════════════ */
+
+.estimate-card {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 18rem;
+    background: rgba(15, 17, 20, 0.96);
+    border: solid 1px rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.04);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 500;
+    font-family: "Source Sans Pro", sans-serif;
+    font-size: 0.75rem;
+    color: #ffffff;
+    /* Hidden by default — revealed when #schedule is active */
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(0.75rem);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.estimate-card--visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+/* ── Header ── */
+.estimate-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 0.9rem;
+    border-bottom: solid 1px rgba(255, 255, 255, 0.1);
+    cursor: default;
+}
+
+.estimate-card-icon {
+    opacity: 0.6;
+    font-size: 0.7rem;
+}
+
+.estimate-card-title {
+    flex: 1;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.25rem;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.estimate-toggle {
+    background: none;
+    border: none;
+    box-shadow: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: 0;
+    height: auto;
+    width: auto;
+    min-width: 0;
+    letter-spacing: 0;
+    transition: color 0.2s ease;
+}
+
+.estimate-toggle:hover {
+    color: #ffffff;
+    background: none;
+}
+
+/* ── Body ── */
+.estimate-card-body {
+    padding: 0.75rem 0.9rem 0.6rem;
+    max-height: 24rem;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
+    opacity: 1;
+}
+
+.estimate-card-body--collapsed {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+}
+
+/* ── Line items ── */
+.estimate-lines {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 0.6rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.estimate-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0;
+    border: none;
+}
+
+.estimate-line-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.05rem;
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.4;
+    flex: 1;
+}
+
+.estimate-line-amount {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.estimate-line-amount--tbd {
+    color: rgba(255, 255, 255, 0.35);
+    font-weight: 300;
+    font-style: italic;
+}
+
+/* ── Divider ── */
+.estimate-divider {
+    border: none;
+    border-top: solid 1px rgba(255, 255, 255, 0.12);
+    margin: 0.6rem 0;
+}
+
+/* ── Total row ── */
+.estimate-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.6rem;
+}
+
+.estimate-total-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.2rem;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.estimate-total-amount {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: 0.05rem;
+    transition: transform 0.15s ease;
+}
+
+@keyframes estimate-bump {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.08); }
+    100% { transform: scale(1); }
+}
+
+.estimate-total-amount--bump {
+    animation: estimate-bump 0.22s ease-out;
+}
+
+/* ── Disclaimer ── */
+.estimate-disclaimer {
+    font-size: 0.6rem;
+    letter-spacing: 0.05rem;
+    color: rgba(255, 255, 255, 0.3);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ── Responsive: tuck to bottom-center on narrow screens ── */
+@media screen and (max-width: 540px) {
+    .estimate-card {
+        right: 50%;
+        transform: translateX(50%) translateY(0.75rem);
+        width: calc(100% - 2rem);
+        bottom: 1rem;
+    }
+    .estimate-card--visible {
+        transform: translateX(50%) translateY(0);
+    }
+}

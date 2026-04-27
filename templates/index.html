@@ -946,7 +946,25 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 									<li><a href="#" class="icon brands fa-instagram"><span class="label">Instagram</span></a></li>
 								</ul>
 
-								
+								<!-- ── Floating Estimate Card ── -->
+<div id="estimate-card" class="estimate-card" aria-live="polite" aria-label="Live cost estimate">
+    <div class="estimate-card-header">
+        <span class="icon solid fa-calculator estimate-card-icon"></span>
+        <span class="estimate-card-title">Estimate</span>
+        <button type="button" id="estimate-toggle" class="estimate-toggle" aria-label="Collapse estimate">&#8722;</button>
+    </div>
+    <div id="estimate-card-body" class="estimate-card-body">
+        <ul id="estimate-lines" class="estimate-lines"></ul>
+        <div class="estimate-divider"></div>
+        <div class="estimate-total-row">
+            <span class="estimate-total-label">Estimated Total</span>
+            <span id="estimate-total" class="estimate-total-amount">$150</span>
+        </div>
+        <p class="estimate-disclaimer">
+            Estimate only &mdash; final pricing confirmed before work begins.
+        </p>
+    </div>
+</div>
 
 							</article>
 							<!-- End #schedule article -->
@@ -1137,7 +1155,189 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 					finally  { btn.value = orig; btn.disabled = false; }
 				  });
 				}
+
+				// ── Floating Estimate Card ────────────────────────────────────────────────────
+(function () {
+    const RATES = {
+        hull:        { small: 5, mid: 8, large: 12 },   // per LOA ft by tier
+        fouling:     { light: 1.0, mod: 1.25, exces: 1.75 },
+        anode:       50,                                  // per anode
+        prop:        { prop_fixed: 25, prop_fold: 30 },  // per inch diameter
+        mobilization: 150,
+        privateDock:  25,
+        expedited:   600,
+    };
+
+    const card       = document.getElementById('estimate-card');
+    const linesEl    = document.getElementById('estimate-lines');
+    const totalEl    = document.getElementById('estimate-total');
+    const toggleBtn  = document.getElementById('estimate-toggle');
+    const cardBody   = document.getElementById('estimate-card-body');
+    const schedArt   = document.getElementById('schedule');
+    const schedForm  = document.getElementById('scheduleForm');
+
+    if (!card || !schedArt) return;
+
+    // ── Show / hide card when the #schedule article activates ────────────────
+    const visObserver = new MutationObserver(() => {
+        card.classList.toggle('estimate-card--visible', schedArt.classList.contains('active'));
+    });
+    visObserver.observe(schedArt, { attributes: true, attributeFilter: ['class'] });
+    // Catch the case where the page loads directly on #schedule
+    if (schedArt.classList.contains('active')) card.classList.add('estimate-card--visible');
+
+    // ── Collapse / expand toggle ─────────────────────────────────────────────
+    if (toggleBtn && cardBody) {
+        toggleBtn.addEventListener('click', () => {
+            const collapsed = cardBody.classList.toggle('estimate-card-body--collapsed');
+            toggleBtn.innerHTML = collapsed ? '&#43;' : '&#8722;';
+            toggleBtn.setAttribute('aria-label', collapsed ? 'Expand estimate' : 'Collapse estimate');
+        });
+    }
+
+    // ── Calculation ──────────────────────────────────────────────────────────
+    function val(id)          { return document.getElementById(id)?.value ?? ''; }
+    function checked(id)      { return document.getElementById(id)?.checked ?? false; }
+    function num(id, fallback){ return parseFloat(document.getElementById(id)?.value) || fallback || 0; }
+    function intVal(id)       { return parseInt(document.getElementById(id)?.value)   || 0; }
+
+    function calculate() {
+        const lines = [];
+        let total   = 0;
+
+        // Always-present mobilization fee
+        lines.push({ label: 'Crew Mobilization Fee', amount: RATES.mobilization });
+        total += RATES.mobilization;
+
+        // ── Hull Cleaning ────────────────────────────────────────────────────
+        if (checked('svc-hull')) {
+            const loa = num('sched-loa');
+            if (loa > 0) {
+                const ratePerFt = loa < 40 ? RATES.hull.small
+                                : loa < 80 ? RATES.hull.mid
+                                           : RATES.hull.large;
+                const base      = loa * ratePerFt;
+                const fouling   = val('foul-lvl');
+                const mult      = RATES.fouling[fouling] ?? 1.0;
+                const hullTotal = base * mult;
+
+                const foulingNote = fouling === 'mod'   ? ' + 25% fouling surcharge'
+                                  : fouling === 'exces' ? ' + 75% fouling surcharge'
+                                  : '';
+                lines.push({
+                    label:  `Hull Cleaning — ${loa} ft${foulingNote}`,
+                    amount: hullTotal,
+                });
+                total += hullTotal;
+            } else {
+                lines.push({ label: 'Hull Cleaning (enter LOA to calculate)', amount: null });
+            }
+        }
+
+        // ── Anode Replacement ────────────────────────────────────────────────
+        if (checked('svc-anode') && val('anode-rep') === 'yes') {
+            const qty = intVal('qty-keel') + intVal('qty-shaft') + intVal('qty-rudder') + intVal('qty-other');
+            if (qty > 0) {
+                const anodeTotal = qty * RATES.anode;
+                lines.push({ label: `Anode Replacement — ${qty} × $${RATES.anode}`, amount: anodeTotal });
+                total += anodeTotal;
+            } else {
+                lines.push({ label: 'Anode Replacement (enter quantities)', amount: null });
+            }
+        }
+
+        // ── Propeller Service ────────────────────────────────────────────────
+        if (checked('svc-prop') && val('prop-inst') === 'yes') {
+            const propType    = val('prop-type');
+            const propDiam    = num('prop-diam');
+            const ratePerInch = RATES.prop[propType];
+
+            if (propType === 'other' || propType === '') {
+                // "Other" or unselected: excluded from equation per requirement
+                lines.push({ label: 'Propeller Service — custom (TBD)', amount: null });
+            } else if (ratePerInch && propDiam > 0) {
+                const propTotal = ratePerInch * propDiam;
+                lines.push({
+                    label:  `Propeller — ${propDiam}" × $${ratePerInch}/in`,
+                    amount: propTotal,
+                });
+                total += propTotal;
+            } else if (ratePerInch) {
+                lines.push({ label: 'Propeller Service (enter diameter)', amount: null });
+            } else {
+                lines.push({ label: 'Propeller Service (select type)', amount: null });
+            }
+        }
+
+        // ── Rudder Inspection — no listed rate ───────────────────────────────
+        if (checked('svc-rudder')) {
+            lines.push({ label: 'Rudder Inspection', amount: null });
+        }
+
+        // ── Private Dock Surcharge ───────────────────────────────────────────
+        if (val('priv-dock') === 'yes') {
+            lines.push({ label: 'Private Dock Surcharge', amount: RATES.privateDock });
+            total += RATES.privateDock;
+        }
+
+        // ── Expedited Service ────────────────────────────────────────────────
+        if (val('exp-serv') === 'yes') {
+            lines.push({ label: 'Expedited Service', amount: RATES.expedited });
+            total += RATES.expedited;
+        }
+
+        renderLines(lines, total);
+    }
+
+    function renderLines(lines, total) {
+        linesEl.innerHTML = '';
+        lines.forEach(({ label, amount }) => {
+            const li  = document.createElement('li');
+            li.className = 'estimate-line';
+            const hasAmount = amount !== null && amount !== undefined;
+            li.innerHTML =
+                `<span class="estimate-line-label">${label}</span>` +
+                `<span class="estimate-line-amount${hasAmount ? '' : ' estimate-line-amount--tbd'}">` +
+                    (hasAmount ? '$' + amount.toFixed(2) : 'TBD') +
+                `</span>`;
+            linesEl.appendChild(li);
+        });
+
+        // Animate total on change
+        totalEl.classList.remove('estimate-total-amount--bump');
+        void totalEl.offsetWidth; // force reflow
+        totalEl.textContent = '$' + total.toFixed(2);
+        totalEl.classList.add('estimate-total-amount--bump');
+    }
+
+    // ── Wire up all relevant inputs ──────────────────────────────────────────
+    const watchIds = [
+        'svc-hull', 'svc-anode', 'svc-prop', 'svc-rudder',
+        'sched-loa', 'foul-lvl',
+        'anode-rep',
+        'anode-loc-keel', 'anode-loc-shaft', 'anode-loc-rudder', 'anode-loc-other',
+        'qty-keel', 'qty-shaft', 'qty-rudder', 'qty-other',
+        'prop-inst', 'prop-type', 'prop-diam',
+        'priv-dock', 'exp-serv',
+    ];
+
+    watchIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('change', calculate);
+        if (el.type === 'number' || el.type === 'text') {
+            el.addEventListener('input', calculate);
+        }
+    });
+
+    // Reset form resets the card too
+    if (schedForm) schedForm.addEventListener('reset', () => setTimeout(calculate, 50));
+
+    // Initial render
+    calculate();
+})();
 			</script>
+
 
 	</body>
 </html>
