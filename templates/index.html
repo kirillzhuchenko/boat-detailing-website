@@ -1094,6 +1094,7 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 									Approved additions will be billed in addition to the original estimate.
 								</p>
 							</article>
+
 						<!-- gallery -->
 							<article id="gallery">
 								<h2 class="major">Gallery</h2>
@@ -1116,7 +1117,7 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 					</div>
 
 				<footer id="footer">
-					<p class="copyright">&copy; Bluewater Detailing LLC. Design: <a href="https://html5up.net">HTML5 UP</a>.</p>
+					<p class="copyright">&copy; Bluewater Detailing. Design: <a href="https://html5up.net">HTML5 UP</a>.</p>
 					<nav class="legal-links">
 						<a href="/privacy-policy">Privacy Policy</a>
 						<span class="legal-sep">&middot;</span>
@@ -1154,6 +1155,40 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 					} catch { alert('Network error – please try again.'); }
 					finally  { btn.value = orig; btn.disabled = false; }
 				  });
+				}
+				
+				// ── Schedule form ─────────────────────────────────────────────
+				const estimateForm = document.getElementById('estimateForm');
+				if (estimateForm) {
+					estimateForm.addEventListener('submit', async (e) => {
+						e.preventDefault();
+						const btn  = estimateForm.querySelector('[type=submit]');
+						const orig = btn.value;
+						btn.value  = 'Submitting…'; btn.disabled = true;
+				
+						const msg = document.getElementById('scheduleMsg');
+				
+						try {
+							const res  = await fetch('/estimate', { method: 'POST', body: new FormData(estimateForm) });
+							const data = await res.json();
+				
+							msg.className   = 'schedule-flash ' + (res.ok ? 'success' : 'error');
+							msg.textContent = res.ok
+								? data.message
+								: (data.errors || ['Something went wrong.']).join(' ');
+							msg.style.display = 'block';
+				
+							if (res.ok) estimateForm.reset();
+						} catch {
+							msg.className   = 'schedule-flash error';
+							msg.textContent = 'Network error — please try again.';
+							msg.style.display = 'block';
+						} finally {
+							btn.value    = orig;
+							btn.disabled = false;
+							msg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+						}
+					});
 				}
 
 				// ── Floating Estimate Card ────────────────────────────────────────────────────
