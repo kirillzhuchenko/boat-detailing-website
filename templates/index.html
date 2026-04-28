@@ -37,7 +37,7 @@
 								<li><a href="#gallery">Gallery</a></li>
 								<li><a href="#contact">Contact</a></li>
 								<li><a href="#estimate">Estimate</a></li>
-								<li><a href="#schedule">Schedule</a></li>
+<!--								<li><a href="#forms">Froms</a></li>-->
 							</ul>
 						</nav>
 					</header>
@@ -210,8 +210,8 @@
 							</article>
 
 						<!-- Estimate -->
-							<article id="estimate">
-								<h2 class="major">Estimate</h2>
+							<article id="forms">
+								<h2 class="major">Forms</h2>
 
 								<section>
 									<h3 class="major">Text</h3>
@@ -478,9 +478,9 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 
 							</article>
 
-						<!-- Schedule -->
-							<article id="schedule">
-								<h2 class="major">Schedule Appointment</h2>
+						<!-- Estimate -->
+							<article id="estimate">
+								<h2 class="major">Get estimate</h2>
 								<span class="image main"><img src="static/images/10-b.jpg" alt="Bainbridge Divers" /></span>
 
 								<p>Ready to get your hull cleaned or running gear serviced?
@@ -494,7 +494,7 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 									We will contact you to finalize the date and time.
 								</div>
 
-								<form id="scheduleForm" method="post" action="/schedule">
+								<form id="estimateForm" method="post" action="/estimate">
 
 									<!-- ── flash message shown after submit ── -->
 									<div id="scheduleMsg" class="schedule-flash" style="display:none"></div>
@@ -1173,8 +1173,8 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 					const totalEl    = document.getElementById('estimate-total');
 					const toggleBtn  = document.getElementById('estimate-toggle');
 					const cardBody   = document.getElementById('estimate-card-body');
-					const schedArt   = document.getElementById('schedule');
-					const schedForm  = document.getElementById('scheduleForm');
+					const schedArt   = document.getElementById('estimate');
+					const schedForm  = document.getElementById('estimateForm');
 
 					if (!card || !schedArt) return;
 

@@ -91,8 +91,8 @@ def contact():
     return jsonify({"status": "ok", "message": "Thanks! We'll be in touch soon."})
 
 
-@app.route("/schedule", methods=["POST"])
-def schedule():
+@app.route("/estimate", methods=["POST"])
+def estimate():
     data = request.form.to_dict()
 
     required = {

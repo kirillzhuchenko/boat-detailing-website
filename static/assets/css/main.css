@@ -2448,14 +2448,17 @@ section.field.half:has(#sched-hull-mat [value="other"]:checked) .hull-mat-other-
 }
 
 /* ── Responsive: tuck to bottom-center on narrow screens ── */
-@media screen and (max-width: 540px) {
+/* ── Narrow viewports: collapse to a strip at the bottom ── */
+@media screen and (max-width: 700px) {
     .estimate-card {
-        right: 50%;
-        transform: translateX(50%) translateY(0.75rem);
-        width: calc(100% - 2rem);
+        right: 1rem;
+        left: 1rem;
         bottom: 1rem;
+        top: auto !important;   /* overrides any inline top set by JS */
+        width: auto;
+        transform: none;
     }
     .estimate-card--visible {
-        transform: translateX(50%) translateY(0);
+        transform: none;
     }
 }
