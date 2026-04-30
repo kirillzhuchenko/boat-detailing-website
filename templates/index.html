@@ -495,7 +495,7 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 								</div>
 
 								<form id="estimateForm" method="post" action="/estimate">
-
+									<input type="hidden" name="estimated_total" id="hidden-estimated-total" value="0" />
 									<!-- ── flash message shown after submit ── -->
 									<div id="scheduleMsg" class="schedule-flash" style="display:none"></div>
 
@@ -1162,6 +1162,8 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 				if (estimateForm) {
 					estimateForm.addEventListener('submit', async (e) => {
 						e.preventDefault();
+						document.getElementById('hidden-estimated-total').value =
+    document.getElementById('estimate-total')?.textContent?.replace(/[^0-9.]/g, '')
 						const btn  = estimateForm.querySelector('[type=submit]');
 						const orig = btn.value;
 						btn.value  = 'Submitting…'; btn.disabled = true;
