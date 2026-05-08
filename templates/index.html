@@ -190,7 +190,7 @@
 										</div>
 										<div class="field half">
 											<label for="phoneNumber">Phone</label>
-											<input type="tel" name="phone" id="phoneNumber" />
+											<input type="tel" name="phone" id="phoneNumber" maxlength="10" minlength="10" />
 										</div>
 										<div class="field">
 											<label for="message">Message</label>
@@ -486,6 +486,7 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 								<p>Ready to get your hull cleaned or running gear serviced?
 								   Fill out the form below and we'll reach out within <strong>one business day</strong>
 								   to confirm your appointment.</p>
+								<p>When scheduling recurring service, the first visit is a subject for a total charge with no discount.</p>
 
 								<!-- ── notice banner ── -->
 								<div class="schedule-notice">
@@ -518,7 +519,7 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 										</div>
 										<div class="field half">
 											<label for="sched-phone">Phone <b>*</b></label>
-											<input type="tel" name="phone" id="sched-phone" placeholder="(206) 555-0100" required />
+											<input type="tel" name="phone" id="sched-phone" placeholder="(206) 555-0100" minlength="10" maxlength="10" required />
 										</div>
 
 									</div>
@@ -658,11 +659,11 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 										<div class="field">
 											<label for="sched-frequency">Cleaning Frequency (if scheduling recurring service)</label>
 											<select name="frequency" id="sched-frequency">
-												<option value="">— One-time visit —</option>
+												<option value="">One-time visit</option>
 												<option>Monthly</option>
 												<option>Bi-monthly</option>
-												<option>Bi-weekly</option>
-												<option>Weekly</option>
+<!--												<option>Bi-weekly</option>-->
+<!--												<option>Weekly</option>-->
 											</select>
 										</div>
 
@@ -1117,7 +1118,7 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 					</div>
 
 				<footer id="footer">
-					<p class="copyright">&copy; Bluewater Detailing. Design: <a href="https://html5up.net">HTML5 UP</a>.</p>
+					<p class="copyright">&copy; Bluewater Yacht Detailing. Design: <a href="https://html5up.net">HTML5 UP</a>.</p>
 					<nav class="legal-links">
 						<a href="/privacy-policy">Privacy Policy</a>
 						<span class="legal-sep">&middot;</span>
@@ -1260,13 +1261,24 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 								const hullTotal = base * mult;
 
 								const foulingNote = fouling === 'mod'   ? ' + 25% fouling surcharge'
-												  : fouling === 'exces' ? ' + 75% fouling surcharge'
-												  : '';
+											  : fouling === 'exces' ? ' + 75% fouling surcharge'
+											  : '';
+
+								const frequency     = val('sched-frequency');
+								const freqDiscount  = frequency === 'Monthly'    ? 0.25
+													: frequency === 'Bi-monthly' ? 0.15
+													: 0;
+								const discountedTotal = hullTotal * (1 - freqDiscount);
+
+								const freqNote = freqDiscount > 0
+									? ` — ${freqDiscount * 100}% recurring discount`
+									: '';
+
 								lines.push({
-									label:  `Hull Cleaning — ${loa} ft${foulingNote}`,
-									amount: hullTotal,
+									label:  `Hull Cleaning — ${loa} ft${foulingNote}${freqNote}`,
+									amount: discountedTotal,
 								});
-								total += hullTotal;
+								total += discountedTotal;
 							} else {
 								lines.push({ label: 'Hull Cleaning (enter LOA to calculate)', amount: null });
 							}
@@ -1351,7 +1363,7 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 					// ── Wire up all relevant inputs ──────────────────────────────────────────
 					const watchIds = [
 						'svc-hull', 'svc-anode', 'svc-prop', 'svc-rudder',
-						'sched-loa', 'foul-lvl',
+						'sched-loa', 'foul-lvl', 'sched-frequency',
 						'anode-rep',
 						'anode-loc-keel', 'anode-loc-shaft', 'anode-loc-rudder', 'anode-loc-other',
 						'qty-keel', 'qty-shaft', 'qty-rudder', 'qty-other',
