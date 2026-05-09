@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Invoice {{ invoice_num }} — Bluewater Yacht Detailing</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+Pro:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--navy:#1e3a5f;--navy-lt:#eef2f7;--ink:#2d3748;--mid:#4a5568;--muted:#718096;--border:#e2e8f0;--bg:#f0f4f8;}
+body{font-family:'Source Sans Pro',sans-serif;font-weight:300;font-size:10.5pt;color:var(--ink);background:var(--bg);padding:2rem 1rem}
+.page{max-width:820px;margin:0 auto;background:#fff;padding:3rem;box-shadow:0 4px 30px rgba(0,0,0,.1)}
+@media print{
+  body{background:#fff;padding:0}
+  .page{margin:0;padding:2cm 2.5cm;box-shadow:none;max-width:100%}
+  .no-print{display:none!important}
+  @page{margin:0;size:A4}
+}
+.print-btn{position:fixed;top:1.5rem;right:1.5rem;background:var(--navy);color:#fff;border:none;padding:.6rem 1.4rem;font-family:'Source Sans Pro',sans-serif;font-size:.75rem;font-weight:600;letter-spacing:.15rem;text-transform:uppercase;border-radius:3px;cursor:pointer}
+.print-btn:hover{background:#2a4f80}
+.hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:3px solid var(--navy)}
+.brand{display:flex;align-items:center;gap:.9rem}
+.brand-icon{width:3rem;height:3rem;border:2px solid var(--navy);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:var(--navy);flex-shrink:0}
+.brand-name{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--navy);line-height:1.2}
+.brand-tag{font-size:.62rem;letter-spacing:.2rem;text-transform:uppercase;color:var(--muted);margin-top:.15rem}
+.co-info{font-size:.78rem;color:var(--mid);line-height:1.8;margin-top:.4rem}
+.inv-label{text-align:right}
+.inv-word{font-family:'Playfair Display',serif;font-size:2rem;color:var(--navy);letter-spacing:.3rem;line-height:1}
+.inv-no{font-size:.68rem;font-weight:600;letter-spacing:.2rem;text-transform:uppercase;color:var(--muted);margin-top:.3rem}
+.badge{display:inline-block;padding:.15rem .75rem;background:var(--navy-lt);color:var(--navy);font-size:.58rem;font-weight:600;letter-spacing:.2rem;text-transform:uppercase;border-radius:2rem;margin-top:.4rem}
+.meta{display:flex;justify-content:space-between;margin-bottom:1.5rem;gap:2rem}
+.ms{flex:1}
+.ms-r{text-align:right;flex:0 0 auto;min-width:16rem}
+.ms h4{font-size:.6rem;font-weight:600;letter-spacing:.25rem;text-transform:uppercase;color:var(--navy);border-bottom:1px solid var(--border);padding-bottom:.3rem;margin-bottom:.65rem}
+.fr{display:flex;align-items:baseline;gap:.5rem;margin-bottom:.28rem}
+.fr-r{justify-content:flex-end}
+.fl{font-size:.68rem;font-weight:600;letter-spacing:.1rem;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.fv{font-size:.88rem;color:var(--ink)}
+.vessel{background:var(--navy-lt);border-left:4px solid var(--navy);border-radius:0 4px 4px 0;padding:.7rem 1.2rem;margin-bottom:1.5rem;display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem 1rem;font-size:.8rem}
+.vi strong{display:block;font-size:.58rem;font-weight:600;letter-spacing:.18rem;text-transform:uppercase;color:var(--navy);margin-bottom:.1rem}
+table{width:100%;border-collapse:collapse;margin-bottom:1.25rem;font-size:.84rem}
+thead tr{background:var(--navy);color:#fff}
+thead th{padding:.55rem .8rem;text-align:left;font-size:.6rem;font-weight:600;letter-spacing:.18rem;text-transform:uppercase}
+thead th.r{text-align:right}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:nth-child(even){background:#fafbfc}
+td{padding:.5rem .8rem;color:var(--mid);vertical-align:middle}
+td:first-child{font-weight:600;color:var(--ink)}
+td.r{text-align:right;font-weight:600;color:var(--ink)}
+td.tbd{text-align:right;color:var(--muted);font-style:italic}
+.tot-wrap{display:flex;justify-content:flex-end;margin-bottom:1.5rem}
+.tot-box{border:1px solid var(--border);border-radius:4px;overflow:hidden;min-width:21rem}
+.tr-row{display:flex;justify-content:space-between;align-items:center;padding:.5rem 1rem;border-bottom:1px solid var(--border);font-size:.84rem}
+.tr-row:last-child{border-bottom:none}
+.tl{font-size:.68rem;font-weight:600;letter-spacing:.12rem;text-transform:uppercase;color:var(--muted)}
+.ta{font-weight:600;color:var(--ink)}
+.tr-row.grand{background:var(--navy)}
+.tr-row.grand .tl,.tr-row.grand .ta{color:#fff}
+.tr-row.grand .ta{font-size:1rem}
+.sh{font-size:.6rem;font-weight:600;letter-spacing:.25rem;text-transform:uppercase;color:var(--navy);border-bottom:1px solid var(--border);padding-bottom:.3rem;margin-bottom:.6rem}
+.notes-box{width:100%;min-height:2.5rem;border:1px solid var(--border);border-radius:3px;padding:.5rem .75rem;font-size:.82rem;color:var(--mid);line-height:1.6}
+.terms{font-size:.68rem;color:var(--muted);line-height:1.6;border-top:1px solid var(--border);padding-top:.7rem;margin:1.25rem 0}
+.doc-footer{display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid var(--border);padding-top:1rem;font-size:.72rem;color:var(--muted)}
+.sig-line{border-top:1px solid var(--mid);min-width:14rem;padding-top:.3rem;font-size:.62rem;letter-spacing:.1rem;text-transform:uppercase;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">⎙ Print / Save PDF</button>
+
+<div class="page">
+
+  <!-- Header -->
+  <div class="hd">
+    <div class="brand">
+      <div class="brand-icon">⚓</div>
+      <div>
+        <div class="brand-name">Bluewater Yacht Detailing</div>
+        <div class="brand-tag">Professional Underwater Services</div>
+        <div class="co-info">901 2nd Ave N, Kent, WA 98032<br>(123) 456-7890 &nbsp;·&nbsp; myemail@gmail.com</div>
+      </div>
+    </div>
+    <div class="inv-label">
+      <div class="inv-word">INVOICE</div>
+      <div class="inv-no">{{ invoice_num }}</div>
+      <div class="badge">Estimate</div>
+    </div>
+  </div>
+
+  <!-- Meta -->
+  <div class="meta">
+    <div class="ms">
+      <h4>Bill To</h4>
+      <div class="fr"><span class="fl">Name</span><span class="fv">{{ req.first_name }} {{ req.last_name }}</span></div>
+      <div class="fr"><span class="fl">Email</span><span class="fv">{{ req.email }}</span></div>
+      <div class="fr"><span class="fl">Phone</span><span class="fv">{{ req.phone }}</span></div>
+    </div>
+    <div class="ms ms-r">
+      <h4>Invoice Details</h4>
+      <div class="fr fr-r"><span class="fl">Date</span><span class="fv">{{ invoice_date }}</span></div>
+      <div class="fr fr-r"><span class="fl">Due</span><span class="fv">Upon completion</span></div>
+      <div class="fr fr-r"><span class="fl">Service</span><span class="fv">{{ req.frequency or 'One-time' }}</span></div>
+    </div>
+  </div>
+
+  <!-- Vessel -->
+  <div class="vessel">
+    <div class="vi"><strong>Vessel Name</strong>{{ req.vessel_name }}</div>
+    <div class="vi"><strong>Year / Make / Model</strong>{{ req.vessel_year }} {{ req.vessel_make }} {{ req.vessel_model }}</div>
+    <div class="vi"><strong>LOA</strong>{{ req.loa_ft | int }} ft</div>
+    <div class="vi"><strong>Marina / Slip</strong>{{ req.marina }}{% if req.slip %}, {{ req.slip }}{% endif %}</div>
+  </div>
+
+  <!-- Table -->
+  <table>
+    <thead>
+      <tr>
+        <th style="width:20%">Service</th>
+        <th style="width:38%">Description</th>
+        <th class="r" style="width:13%">Qty / Unit</th>
+        <th class="r" style="width:12%">Rate</th>
+        <th class="r" style="width:17%">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in line_items %}
+      <tr>
+        <td>{{ item.svc }}</td>
+        <td>{{ item.desc }}</td>
+        <td class="r">{{ item.qty }}</td>
+        <td class="r">{{ item.rate }}</td>
+        {% if item.amt is not none %}
+        <td class="r">${{ "%.2f"|format(item.amt) }}</td>
+        {% else %}
+        <td class="tbd">TBD</td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Totals -->
+  <div class="tot-wrap">
+    <div class="tot-box">
+      <div class="tr-row">
+        <span class="tl">Subtotal</span>
+        <span class="ta">${{ "%.2f"|format(subtotal) }}</span>
+      </div>
+      <div class="tr-row">
+        <span class="tl">Crew Mobilization (paid at booking)</span>
+        <span class="ta" style="color:var(--muted)">−$150.00</span>
+      </div>
+      <div class="tr-row grand">
+        <span class="tl">Balance Due</span>
+        <span class="ta">${{ "%.2f"|format(balance_due) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notes -->
+  {% if req.notes %}
+  <div style="margin-bottom:1.25rem">
+    <div class="sh">Notes / Special Instructions</div>
+    <div class="notes-box">{{ req.notes }}</div>
+  </div>
+  {% endif %}
+
+  <!-- Terms -->
+  <div class="terms">
+    All rates are estimates. Final pricing confirmed before work begins. Any work requested beyond the original scope will be discussed and approved by the customer before proceeding and billed separately. A Crew Mobilization fee of $150 is required at booking and is applied toward the final invoice total.
+  </div>
+
+  <!-- Footer -->
+  <div class="doc-footer">
+    <div>
+      <strong>Bluewater Yacht Detailing</strong><br>
+      901 2nd Ave N, Kent, WA 98032 &nbsp;|&nbsp; (123) 456-7890 &nbsp;|&nbsp; myemail@gmail.com
+    </div>
+    <div class="sig-line">Authorized Signature</div>
+  </div>
+
+</div>
+</body>
+</html>

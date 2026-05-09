@@ -1,8 +1,9 @@
 import os
 import logging
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, abort
 from notifier import send_telegram_message
-from database import init_db, save_estimate
+from database import init_db, save_estimate, get_request
+from datetime import date
 
 
 # ── Logging ───────────────────────────────────────────────────────────────────
@@ -182,6 +183,86 @@ def privacy_policy():
 @app.route('/terms-of-service')
 def terms_of_service():
     return render_template('terms_of_service.html')
+
+
+@app.route('/invoice/<int:request_id>')
+
+
+def generate_invoice(request_id):
+    req = dict(get_request(request_id) or abort(404))
+    line_items, subtotal = [], 0.0
+    loa = float(req.get('loa_ft') or 0)
+
+    if req.get('svc_hull'):
+        rate = 5 if loa < 40 else (8 if loa < 80 else 12)
+        base = loa * rate
+        fm = {'light': 1.0, 'mod': 1.25, 'exces': 1.75}.get(req.get('fouling_level'), 1.0)
+        fd = {'Monthly': 0.25, 'Bi-monthly': 0.15}.get(req.get('frequency'), 0.0)
+        amt = base * fm * (1 - fd)
+        subtotal += amt
+        desc = f"{int(loa)} ft LOA"
+        if fm > 1: desc += f", +{int((fm - 1) * 100)}% fouling surcharge"
+        if fd > 0: desc += f", −{int(fd * 100)}% recurring discount"
+        line_items.append(
+            {'svc': 'Hull Cleaning', 'desc': desc, 'qty': f'{int(loa)} ft', 'rate': f'${rate}/ft', 'amt': amt})
+
+    if req.get('svc_anode') and req.get('anode_required') == 'yes':
+        qty = sum(
+            filter(None, [req.get('qty_keel'), req.get('qty_shaft'), req.get('qty_rudder'), req.get('qty_other')])) or 0
+        if qty:
+            a = qty * 50;
+            subtotal += a
+            line_items.append(
+                {'svc': 'Anode Replacement', 'desc': f"{qty}× {req.get('anode_material') or 'standard'} anodes",
+                 'qty': f'{qty} ea', 'rate': '$50/ea', 'amt': a})
+
+    if req.get('svc_prop') and req.get('prop_inst_required') == 'yes':
+        pt = req.get('prop_type')
+        diam = float(req.get('prop_diam') or 0)
+        pr = {'prop_fixed': 25, 'prop_fold': 30}.get(pt)
+        if pr and diam:
+            a = pr * diam;
+            subtotal += a
+            lb = 'Fixed-Blade' if pt == 'prop_fixed' else 'Folding'
+            line_items.append({'svc': 'Propeller Service', 'desc': f'{int(diam)}" {lb} — removal & installation',
+                               'qty': f'{int(diam)}"', 'rate': f'${pr}/in', 'amt': a})
+        else:
+            line_items.append(
+                {'svc': 'Propeller Service', 'desc': 'Custom / contact for pricing', 'qty': '—', 'rate': 'TBD',
+                 'amt': None})
+
+    if req.get('svc_rudder'):
+        line_items.append(
+            {'svc': 'Rudder Inspection', 'desc': 'Visual inspection & written condition report', 'qty': '—',
+             'rate': 'TBD', 'amt': None})
+
+    if req.get('svc_other'):
+        line_items.append(
+            {'svc': 'Additional Service', 'desc': req.get('svc_other_detail') or '—', 'qty': '—', 'rate': 'TBD',
+             'amt': None})
+
+    if req.get('private_dock') == 'yes':
+        subtotal += 25
+        line_items.append(
+            {'svc': 'Private Dock Surcharge', 'desc': 'Remote/private dock access', 'qty': '—', 'rate': '$25',
+             'amt': 25})
+
+    if req.get('exp_service') == 'yes':
+        subtotal += 600
+        line_items.append(
+            {'svc': 'Expedited Service', 'desc': 'Priority scheduling', 'qty': '—', 'rate': '$600', 'amt': 600})
+
+    subtotal += 150
+    line_items.append({'svc': 'Crew Mobilization Fee', 'desc': 'Applied toward final invoice at completion', 'qty': '—',
+                       'rate': '$150', 'amt': 150})
+
+    return render_template(
+        'invoice_dark_auto.html',
+        req=req, line_items=line_items, subtotal=subtotal,
+        balance_due=subtotal - 150,
+        invoice_date=date.today().strftime('%B %d, %Y'),
+        invoice_num=f"BWD-{req['id']:04d}",
+    )
 
 
 if __name__ == '__main__':
