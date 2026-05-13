@@ -1420,8 +1420,8 @@ input, select, textarea {
 			}
 
 		#header .logo {
-			width: 5.5rem;
-			height: 5.5rem;
+			width: 9.5rem;
+			height: 9.5rem;
 			line-height: 5.5rem;
 			border: solid 1px #ffffff;
 			border-radius: 100%;
@@ -1429,6 +1429,18 @@ input, select, textarea {
 
 			#header .logo .icon:before {
 				font-size: 2rem;
+			}
+					/* Remove the original white border from the template's logo container */
+			#header .logo {
+				border: none;
+			}
+
+			/* Make your custom image the perfect circle */
+			#header .logo .custom-logo {
+				width: 100%;
+				height: 100%;
+				object-fit: cover; /* Keeps it from stretching */
+				border-radius: 50%; /* Makes your image perfectly round */
 			}
 
 		#header .content {
