@@ -1274,94 +1274,103 @@ print 'It took ' + i + ' iterations to sort the deck.';</code></pre>
 					function intVal(id)       { return parseInt(document.getElementById(id)?.value)   || 0; }
 
 					function calculate() {
-    const lines = [];
-    let serviceTotal = 0;   // hull, anode, prop — subject to $150 minimum
-    let addonTotal   = 0;   // private dock, expedited — not subject to minimum
+						const lines = [];
+						let total   = 0;
 
-    // ── Hull Cleaning ────────────────────────────────────────────────────
-    if (checked('svc-hull')) {
-        const loa = num('sched-loa');
-        if (loa > 0) {
-            const ratePerFt = loa < 40 ? RATES.hull.small
-                            : loa < 80 ? RATES.hull.mid
-                                       : RATES.hull.large;
-            const base    = loa * ratePerFt;
-            const fouling = val('foul-lvl');
-            const mult    = RATES.fouling[fouling] ?? 1.0;
-            const hullBase = base * mult;
+						// // Always-present mobilization fee
+						// lines.push({ label: 'Crew Mobilization Fee', amount: RATES.mobilization });
+						// total += RATES.mobilization;
 
-            const foulingNote = fouling === 'mod'   ? ' + 75% fouling surcharge'
-                              : fouling === 'exces' ? ' + 150% fouling surcharge'
-                              : '';
+						// ── Hull Cleaning ────────────────────────────────────────────────────
+						if (checked('svc-hull')) {
+							const loa = num('sched-loa');
+							if (loa > 0) {
+								const ratePerFt = loa < 40 ? RATES.hull.small
+												: loa < 80 ? RATES.hull.mid
+														   : RATES.hull.large;
+								const base      = loa * ratePerFt;
+								const fouling   = val('foul-lvl');
+								const mult      = RATES.fouling[fouling] ?? 1.0;
+								const hullTotal = base * mult;
 
-            const frequency    = val('sched-frequency');
-            const freqDiscount = frequency === 'Monthly'    ? 0.25
-                               : frequency === 'Bi-monthly' ? 0.15
-                               : 0;
-            const hullTotal    = hullBase * (1 - freqDiscount);
-            const freqNote     = freqDiscount > 0
-                ? ` — ${freqDiscount * 100}% recurring discount` : '';
+								const foulingNote = fouling === 'mod'   ? ' + 75% fouling surcharge'
+											  : fouling === 'exces' ? ' + 150% fouling surcharge'
+											  : '';
 
-            lines.push({ label: `Hull Cleaning — ${loa} ft${foulingNote}${freqNote}`, amount: hullTotal });
-            serviceTotal += hullTotal;
-        } else {
-            lines.push({ label: 'Hull Cleaning (enter LOA to calculate)', amount: null });
-        }
-    }
+								const frequency     = val('sched-frequency');
+								const freqDiscount  = frequency === 'Monthly'    ? 0.25
+													: frequency === 'Bi-monthly' ? 0.15
+													: 0;
+								const discountedTotal = hullTotal * (1 - freqDiscount);
 
-    // ── Anode Replacement ────────────────────────────────────────────────
-    if (checked('svc-anode') && val('anode-rep') === 'yes') {
-        const qty = intVal('qty-keel') + intVal('qty-shaft') + intVal('qty-rudder') + intVal('qty-other');
-        if (qty > 0) {
-            const anodeTotal = qty * RATES.anode;
-            lines.push({ label: `Anode Replacement — ${qty} × $${RATES.anode}`, amount: anodeTotal });
-            serviceTotal += anodeTotal;
-        } else {
-            lines.push({ label: 'Anode Replacement (enter quantities)', amount: null });
-        }
-    }
+								const freqNote = freqDiscount > 0
+									? ` — ${freqDiscount * 100}% recurring discount`
+									: '';
 
-    // ── Propeller Service ────────────────────────────────────────────────
-    if (checked('svc-prop') && val('prop-inst') === 'yes') {
-        const propType    = val('prop-type');
-        const propDiam    = num('prop-diam');
-        const ratePerInch = RATES.prop[propType];
+								lines.push({
+									label:  `Hull Cleaning — ${loa} ft${foulingNote}${freqNote}`,
+									amount: discountedTotal,
+								});
+								total += discountedTotal;
+							} else {
+								lines.push({ label: 'Hull Cleaning (enter LOA to calculate)', amount: null });
+							}
+						}
 
-        if (propType === 'other' || propType === '') {
-            lines.push({ label: 'Propeller Service — custom (TBD)', amount: null });
-        } else if (ratePerInch && propDiam > 0) {
-            const propTotal = ratePerInch * propDiam;
-            lines.push({ label: `Propeller — ${propDiam}" × $${ratePerInch}/in`, amount: propTotal });
-            serviceTotal += propTotal;
-        } else if (ratePerInch) {
-            lines.push({ label: 'Propeller Service (enter diameter)', amount: null });
-        } else {
-            lines.push({ label: 'Propeller Service (select type)', amount: null });
-        }
-    }
+						// ── Anode Replacement ────────────────────────────────────────────────
+						if (checked('svc-anode') && val('anode-rep') === 'yes') {
+							const qty = intVal('qty-keel') + intVal('qty-shaft') + intVal('qty-rudder') + intVal('qty-other');
+							if (qty > 0) {
+								const anodeTotal = qty * RATES.anode;
+								lines.push({ label: `Anode Replacement — ${qty} × $${RATES.anode}`, amount: anodeTotal });
+								total += anodeTotal;
+							} else {
+								lines.push({ label: 'Anode Replacement (enter quantities)', amount: null });
+							}
+						}
 
-    // ── $150 minimum service charge ──────────────────────────────────────
-    // Only kicks in when at least one priced service is selected
-    if (serviceTotal > 0 && serviceTotal < 150) {
-        const adjustment = 150 - serviceTotal;
-        lines.push({ label: 'Minimum service charge', amount: adjustment });
-        serviceTotal = 150;
-    }
+						// ── Propeller Service ────────────────────────────────────────────────
+						if (checked('svc-prop') && val('prop-inst') === 'yes') {
+							const propType    = val('prop-type');
+							const propDiam    = num('prop-diam');
+							const ratePerInch = RATES.prop[propType];
 
-    // ── Private Dock Surcharge ───────────────────────────────────────────
-    if (val('priv-dock') === 'yes') {
-        lines.push({ label: 'Private Dock Surcharge', amount: RATES.privateDock });
-        addonTotal += RATES.privateDock;
-    }
+							if (propType === 'other' || propType === '') {
+								// "Other" or unselected: excluded from equation per requirement
+								lines.push({ label: 'Propeller Service — custom (TBD)', amount: null });
+							} else if (ratePerInch && propDiam > 0) {
+								const propTotal = ratePerInch * propDiam;
+								lines.push({
+									label:  `Propeller — ${propDiam}" × $${ratePerInch}/in`,
+									amount: propTotal,
+								});
+								total += propTotal;
+							} else if (ratePerInch) {
+								lines.push({ label: 'Propeller Service (enter diameter)', amount: null });
+							} else {
+								lines.push({ label: 'Propeller Service (select type)', amount: null });
+							}
+						}
 
-    // ── Expedited Service ────────────────────────────────────────────────
-    if (val('exp-serv') === 'yes') {
-        lines.push({ label: 'Expedited Service', amount: RATES.expedited });
-        addonTotal += RATES.expedited;
-    }
+						// // ── Rudder Inspection — no listed rate ───────────────────────────────
+						// if (checked('svc-rudder')) {
+						// 	lines.push({ label: 'Rudder Inspection', amount: null });
+						// }
 
-    renderLines(lines, serviceTotal + addonTotal);
-}
+						// ── Private Dock Surcharge ───────────────────────────────────────────
+						if (val('priv-dock') === 'yes') {
+							lines.push({ label: 'Private Dock Surcharge', amount: RATES.privateDock });
+							total += RATES.privateDock;
+						}
+
+						// ── Expedited Service ────────────────────────────────────────────────
+						if (val('exp-serv') === 'yes') {
+							lines.push({ label: 'Expedited Service', amount: RATES.expedited });
+							total += RATES.expedited;
+						}
+
+						renderLines(lines, total);
+					}
 
 					function renderLines(lines, total) {
 						linesEl.innerHTML = '';

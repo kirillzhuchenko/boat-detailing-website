@@ -241,18 +241,6 @@ def generate_invoice(request_id):
             {'svc': 'Additional Service', 'desc': req.get('svc_other_detail') or '—', 'qty': '—', 'rate': 'TBD',
              'amt': None})
 
-    # ── $150 minimum service charge ───────────────────────────
-    # Applies to the service subtotal before add-ons and mobilization fee.
-    if 0 < subtotal < 150:
-        adjustment = 150 - subtotal
-        line_items.append({
-            'svc':  'Minimum Service Charge',
-            'desc': 'Minimum applies when service total is below $150',
-            'qty':  '—',
-            'rate': '—',
-            'amt':  adjustment,
-        })
-        subtotal = 150
 
     if req.get('private_dock') == 'yes':
         subtotal += 25
