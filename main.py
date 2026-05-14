@@ -196,7 +196,7 @@ def generate_invoice(request_id):
     if req.get('svc_hull'):
         rate = 5 if loa < 40 else (8 if loa < 80 else 12)
         base = loa * rate
-        fm = {'light': 1.0, 'mod': 1.25, 'exces': 1.75}.get(req.get('fouling_level'), 1.0)
+        fm = {'light': 1.0, 'mod': 1.75, 'exces': 2.5}.get(req.get('fouling_level'), 1.0)
         fd = {'Monthly': 0.25, 'Bi-monthly': 0.15}.get(req.get('frequency'), 0.0)
         amt = base * fm * (1 - fd)
         subtotal += amt
@@ -240,6 +240,19 @@ def generate_invoice(request_id):
         line_items.append(
             {'svc': 'Additional Service', 'desc': req.get('svc_other_detail') or '—', 'qty': '—', 'rate': 'TBD',
              'amt': None})
+
+    # ── $150 minimum service charge ───────────────────────────
+    # Applies to the service subtotal before add-ons and mobilization fee.
+    if 0 < subtotal < 150:
+        adjustment = 150 - subtotal
+        line_items.append({
+            'svc':  'Minimum Service Charge',
+            'desc': 'Minimum applies when service total is below $150',
+            'qty':  '—',
+            'rate': '—',
+            'amt':  adjustment,
+        })
+        subtotal = 150
 
     if req.get('private_dock') == 'yes':
         subtotal += 25
