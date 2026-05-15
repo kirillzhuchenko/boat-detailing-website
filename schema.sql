@@ -132,3 +132,4 @@ BEGIN
     INSERT INTO request_status_log (request_id, old_status, new_status, changed_by)
     VALUES (OLD.id, OLD.status, NEW.status, 'system');
 END;
+

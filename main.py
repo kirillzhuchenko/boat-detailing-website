@@ -265,6 +265,19 @@ def generate_invoice(request_id):
         invoice_num=f"BWD-{req['id']:04d}",
     )
 
+@app.route('/invoice/<int:request_id>/deposit')
+def mobilization_invoice(request_id):
+    from datetime import date
+    req = dict(get_request(request_id) or abort(404))
+    return render_template(
+        'invoice_mobilization_auto.html',
+        req     = req,
+        paid    = bool(req.get('deposit_paid')),   # ← reads straight from DB now
+        inv_date = date.today().strftime('%B %d, %Y'),
+        inv_num  = f"BWD-{req['id']:04d}-D",
+        job_num  = f"BWD-{req['id']:04d}",
+    )
+
 
 if __name__ == '__main__':
     app.run(debug=True)

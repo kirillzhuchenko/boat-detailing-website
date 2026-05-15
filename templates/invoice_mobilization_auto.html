@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mobilization Invoice {{ inv_num }} — Bluewater Yacht Detailing</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#1b1f22;--border:rgba(255,255,255,0.18);--border-strong:rgba(255,255,255,0.55);
+  --text:#ffffff;--muted:rgba(255,255,255,0.55);--dim:rgba(255,255,255,0.28);
+}
+html{font-size:10.5pt}
+body{font-family:'Source Sans Pro',sans-serif;font-weight:300;color:var(--text);background:var(--bg);min-height:100vh;padding:2.5rem 1.5rem}
+@media print{
+  html{font-size:9.5pt}
+  body{background:#111417;padding:0}
+  .page{box-shadow:none;max-width:100%;padding:2cm 2.4cm}
+  .no-print{display:none!important}
+  @page{size:A4;margin:0}
+}
+.no-print{position:fixed;top:1.5rem;right:1.5rem}
+.print-btn{background:transparent;border:1px solid var(--border-strong);color:#fff;
+  padding:.55rem 1.35rem;font-family:'Source Sans Pro',sans-serif;font-size:.65rem;
+  font-weight:600;letter-spacing:.25rem;text-transform:uppercase;cursor:pointer;border-radius:3px}
+.print-btn:hover{background:rgba(255,255,255,.08)}
+.page{max-width:680px;margin:0 auto;background:rgba(27,31,34,.92);
+  border:1px solid var(--border);border-radius:4px;padding:3rem 3rem 2.5rem;
+  box-shadow:0 16px 60px rgba(0,0,0,.7)}
+.hd{display:flex;justify-content:space-between;align-items:flex-start;
+    padding-bottom:2rem;margin-bottom:2rem;border-bottom:1px solid var(--border)}
+.brand-row{display:flex;align-items:center;gap:1rem}
+.logo-img{height:3.8rem;width:auto;border-radius:50%;display:block;flex-shrink:0}
+.brand-name{font-size:1rem;font-weight:600;letter-spacing:.35rem;text-transform:uppercase;line-height:1.2}
+.brand-tag{font-size:.58rem;letter-spacing:.22rem;text-transform:uppercase;color:var(--muted);margin-top:.25rem}
+.co-info{font-size:.72rem;color:var(--muted);line-height:1.85;margin-top:.5rem}
+.inv-block{text-align:right}
+.inv-word{font-size:1.6rem;font-weight:600;letter-spacing:.6rem;text-transform:uppercase;
+  border-bottom:1px solid var(--border-strong);padding-bottom:.4rem;margin-bottom:.6rem;
+  width:max-content;margin-left:auto}
+.inv-meta-row{display:flex;justify-content:flex-end;align-items:baseline;gap:.6rem;margin-bottom:.25rem}
+.iml{font-size:.58rem;font-weight:600;letter-spacing:.18rem;text-transform:uppercase;color:var(--muted)}
+.imv{font-size:.8rem}
+.badge-due{display:inline-block;margin-top:.6rem;padding:.2rem 1rem;border-radius:2rem;
+  font-size:.58rem;font-weight:600;letter-spacing:.22rem;text-transform:uppercase;
+  border:1px solid rgba(255,200,80,.7);color:rgba(255,200,80,.9)}
+.badge-paid{display:inline-block;margin-top:.6rem;padding:.2rem 1rem;border-radius:2rem;
+  font-size:.58rem;font-weight:600;letter-spacing:.22rem;text-transform:uppercase;
+  border:1px solid rgba(80,220,140,.7);color:rgba(80,220,140,.9)}
+.meta{display:flex;justify-content:space-between;gap:2rem;margin-bottom:1.75rem}
+.ms{flex:1}.ms-r{flex:0 0 auto;min-width:14rem;text-align:right}
+.ms h4{font-size:.58rem;font-weight:600;letter-spacing:.25rem;text-transform:uppercase;
+  color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:.3rem;margin-bottom:.7rem}
+.fr{display:flex;align-items:baseline;gap:.5rem;margin-bottom:.3rem}
+.fr-r{justify-content:flex-end}
+.fl{font-size:.62rem;font-weight:600;letter-spacing:.12rem;text-transform:uppercase;color:var(--dim);white-space:nowrap}
+.fv{font-size:.82rem}
+.vessel{border:1px solid var(--border);border-left:3px solid var(--border-strong);
+  border-radius:0 3px 3px 0;padding:.8rem 1.25rem;margin-bottom:2rem;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem 1.2rem;font-size:.78rem}
+.vi strong{display:block;font-size:.55rem;font-weight:600;letter-spacing:.2rem;
+  text-transform:uppercase;color:var(--muted);margin-bottom:.15rem}
+.fee-wrap{margin-bottom:2rem}
+.fee-head{font-size:.58rem;font-weight:600;letter-spacing:.25rem;text-transform:uppercase;
+  color:var(--muted);border-bottom:1px solid var(--border);padding-bottom:.3rem;margin-bottom:1.25rem}
+.fee-card{border:1px solid var(--border-strong);border-radius:4px;overflow:hidden}
+.fee-row{display:flex;justify-content:space-between;align-items:center;
+  padding:.7rem 1.25rem;border-bottom:1px solid var(--border);font-size:.85rem}
+.fee-label{font-weight:600;color:var(--text);letter-spacing:.05rem}
+.fee-sub{font-size:.7rem;color:var(--muted);margin-top:.15rem;line-height:1.5}
+.fee-amount{font-size:1.5rem;font-weight:600;letter-spacing:.05rem}
+.fee-note-row{background:rgba(255,255,255,.03);padding:.65rem 1.25rem;
+  font-size:.7rem;color:var(--muted);line-height:1.6}
+.fee-note-row strong{color:var(--text);font-weight:600}
+.tot-wrap{display:flex;justify-content:flex-end;margin-bottom:2rem}
+.tot-box{border:1px solid var(--border);border-radius:3px;min-width:20rem;overflow:hidden}
+.trow{display:flex;justify-content:space-between;align-items:center;
+  padding:.55rem 1rem;border-bottom:1px solid var(--border);font-size:.82rem}
+.trow:last-child{border-bottom:none}
+.tl{font-size:.58rem;font-weight:600;letter-spacing:.18rem;text-transform:uppercase;color:var(--muted)}
+.ta{font-weight:600}
+.trow.grand{background:rgba(255,255,255,.06);border-top:1px solid var(--border-strong)}
+.trow.grand .tl{color:var(--text);letter-spacing:.22rem}
+.trow.grand .ta{font-size:1.15rem}
+.terms{font-size:.65rem;color:var(--dim);line-height:1.7;
+  border-top:1px solid var(--border);padding-top:.75rem;margin:0 0 1.25rem}
+.doc-footer{display:flex;justify-content:space-between;align-items:flex-end;
+  border-top:1px solid var(--border);padding-top:1rem;font-size:.68rem;color:var(--muted)}
+.sig-line{border-top:1px solid rgba(255,255,255,.35);min-width:13rem;padding-top:.3rem;
+  font-size:.58rem;letter-spacing:.18rem;text-transform:uppercase;color:var(--dim);text-align:center}
+</style>
+</head>
+<body>
+<div class="no-print">
+  <button class="print-btn" onclick="window.print()">⎙ &nbsp;Print / Save PDF</button>
+</div>
+<div class="page">
+
+  <!-- Header -->
+  <div class="hd">
+    <div>
+      <div class="brand-row">
+        <img src="/static/images/logo-nobg.png" class="logo-img" alt="Bluewater Yacht Detailing" />
+        <div>
+          <div class="brand-name">Bluewater Yacht Detailing</div>
+          <div class="brand-tag">Professional Underwater Services</div>
+        </div>
+      </div>
+      <div class="co-info">901 2nd Ave N, Kent, WA 98032<br>(123) 456-7890 &nbsp;·&nbsp; myemail@gmail.com</div>
+    </div>
+    <div class="inv-block">
+      <div class="inv-word">Invoice</div>
+      <div class="inv-meta-row"><span class="iml">No.</span><span class="imv">{{ inv_num }}</span></div>
+      <div class="inv-meta-row"><span class="iml">Date</span><span class="imv">{{ inv_date }}</span></div>
+      <div class="inv-meta-row"><span class="iml">Ref. Job</span><span class="imv">{{ job_num }}</span></div>
+      <div>
+        {% if paid %}
+        <span class="badge-paid">Payment Received</span>
+        {% else %}
+        <span class="badge-due">Amount Due</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Bill To -->
+  <div class="meta">
+    <div class="ms">
+      <h4>Bill To</h4>
+      <div class="fr"><span class="fl">Name</span><span class="fv">{{ req.first_name }} {{ req.last_name }}</span></div>
+      <div class="fr"><span class="fl">Email</span><span class="fv">{{ req.email }}</span></div>
+      <div class="fr"><span class="fl">Phone</span><span class="fv">{{ req.phone }}</span></div>
+    </div>
+    <div class="ms ms-r">
+      <h4>Booking Details</h4>
+      <div class="fr fr-r"><span class="fl">Invoice Date</span><span class="fv">{{ inv_date }}</span></div>
+      <div class="fr fr-r"><span class="fl">Frequency</span><span class="fv">{{ req.frequency or 'One-time' }}</span></div>
+    </div>
+  </div>
+
+  <!-- Vessel -->
+  <div class="vessel">
+    <div class="vi"><strong>Vessel Name</strong>{{ req.vessel_name }}</div>
+    <div class="vi"><strong>Year / Make / Model</strong>{{ req.vessel_year }} {{ req.vessel_make }} {{ req.vessel_model }}</div>
+    <div class="vi"><strong>Marina / Slip</strong>{{ req.marina }}{% if req.slip %}, {{ req.slip }}{% endif %}</div>
+  </div>
+
+  <!-- Fee card -->
+  <div class="fee-wrap">
+    <div class="fee-head">Charge</div>
+    <div class="fee-card">
+      <div class="fee-row">
+        <div>
+          <div class="fee-label">Crew Mobilization Fee</div>
+          <div class="fee-sub">
+            Covers crew travel time, gear preparation, safety checks,<br>
+            and equipment staging for your scheduled service.
+          </div>
+        </div>
+        <div class="fee-amount">$150.00</div>
+      </div>
+      <div class="fee-note-row">
+        <strong>This fee is not an additional charge.</strong>
+        It is applied in full toward your final invoice upon completion of service.
+        Your balance due after service will reflect this payment.
+      </div>
+    </div>
+  </div>
+
+  <!-- Totals -->
+  <div class="tot-wrap">
+    <div class="tot-box">
+      <div class="trow">
+        <span class="tl">Subtotal</span>
+        <span class="ta">$150.00</span>
+      </div>
+      <div class="trow grand">
+        {% if paid %}
+        <span class="tl">Payment Received</span>
+        <span class="ta" style="color:rgba(80,220,140,.9)">$150.00 ✓</span>
+        {% else %}
+        <span class="tl">Total Due at Booking</span>
+        <span class="ta">$150.00</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Terms -->
+  <div class="terms">
+    This invoice confirms your service booking with Bluewater Yacht Detailing.
+    The Crew Mobilization Fee of $150.00 is required to secure your appointment and will be
+    credited in full toward your final service invoice. Final pricing is confirmed before work begins.
+    No additional work will be performed without customer approval.
+  </div>
+
+  <!-- Footer -->
+  <div class="doc-footer">
+    <div>
+      <strong style="font-weight:600;letter-spacing:.12rem;text-transform:uppercase;font-size:.68rem">Bluewater Yacht Detailing</strong><br>
+      901 2nd Ave N, Kent, WA 98032 &nbsp;·&nbsp; (123) 456-7890 &nbsp;·&nbsp; myemail@gmail.com
+    </div>
+    <div class="sig-line">Authorized Signature</div>
+  </div>
+
+</div>
+</body>
+</html>

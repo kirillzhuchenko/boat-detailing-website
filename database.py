@@ -280,3 +280,23 @@ def get_status_log(request_id: int) -> list[sqlite3.Row]:
             "SELECT * FROM request_status_log WHERE request_id = ? ORDER BY changed_at ASC",
             (request_id,),
         ).fetchall()
+
+def set_deposit_paid(request_id: int, method: str = "unspecified") -> None:
+    """Mark the mobilization fee as collected."""
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT deposit_paid FROM estimate_requests WHERE id = ?",
+            (request_id,)
+        ).fetchone()
+        if not row:
+            raise LookupError(f"Request id={request_id} not found.")
+
+        conn.execute(
+            """UPDATE estimate_requests
+               SET deposit_paid = 1,
+                   deposit_paid_at = datetime('now'),
+                   deposit_payment_method = ?
+               WHERE id = ?""",
+            (method, request_id)
+        )
+    logger.info("Deposit marked paid for request id=%s via %s", request_id, method)
