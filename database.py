@@ -300,3 +300,178 @@ def set_deposit_paid(request_id: int, method: str = "unspecified") -> None:
             (method, request_id)
         )
     logger.info("Deposit marked paid for request id=%s via %s", request_id, method)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# APPEND these functions to the bottom of your existing database.py
+# ══════════════════════════════════════════════════════════════════════════════
+
+MOBILIZATION_FEE = 150.0   # keep in sync with your rates
+
+
+def compute_balance(final_invoice_total: float, amount_paid: float) -> float:
+    """
+    Balance remaining after deposit credit and any payments made.
+
+    final_invoice_total  — the full job cost (already includes mobilization fee)
+    amount_paid          — cash collected toward the final balance (not the deposit)
+
+    The deposit is always credited automatically.
+    """
+    return max(0.0, final_invoice_total - MOBILIZATION_FEE - amount_paid)
+
+
+def record_payment(
+    request_id: int,
+    amount: float,
+    method: str = "unspecified",
+    notes: str | None = None,
+) -> dict:
+    """
+    Record a payment (full or partial) against the final invoice.
+
+    - Adds `amount` to the running amount_paid total.
+    - Recomputes the balance and sets payment_status automatically:
+        unpaid       → no payment yet
+        partial      → payment received but balance remains
+        paid_in_full → balance is zero or below
+
+    Returns a dict with the updated figures so you can use them
+    in a response or log:
+        {
+            "request_id":   int,
+            "amount_paid":  float,   # cumulative total paid
+            "balance_due":  float,   # remaining balance
+            "status":       str,     # unpaid | partial | paid_in_full
+        }
+
+    Raises:
+        LookupError   if the request_id doesn't exist
+        ValueError    if final_invoice_total hasn't been set yet
+        ValueError    if amount <= 0
+    """
+    if amount <= 0:
+        raise ValueError("Payment amount must be greater than zero.")
+
+    with get_conn() as conn:
+        row = conn.execute(
+            """SELECT final_invoice_total, amount_paid
+               FROM estimate_requests
+               WHERE id = ?""",
+            (request_id,),
+        ).fetchone()
+
+        if not row:
+            raise LookupError(f"Request id={request_id} not found.")
+
+        if row["final_invoice_total"] is None:
+            raise ValueError(
+                f"Request id={request_id} has no final_invoice_total set yet. "
+                "Set the final invoice total before recording payment."
+            )
+
+        new_amount_paid = (row["amount_paid"] or 0.0) + amount
+        balance         = compute_balance(row["final_invoice_total"], new_amount_paid)
+
+        if balance <= 0:
+            status = "paid_in_full"
+        elif new_amount_paid > 0:
+            status = "partial"
+        else:
+            status = "unpaid"
+
+        conn.execute(
+            """UPDATE estimate_requests
+               SET amount_paid    = ?,
+                   payment_status = ?,
+                   payment_method = ?,
+                   payment_date   = datetime('now'),
+                   payment_notes  = ?
+               WHERE id = ?""",
+            (new_amount_paid, status, method, notes, request_id),
+        )
+
+    logger.info(
+        "Payment recorded for id=%s: +$%.2f via %s | status=%s | balance=$%.2f",
+        request_id, amount, method, status, balance,
+    )
+
+    return {
+        "request_id":  request_id,
+        "amount_paid": new_amount_paid,
+        "balance_due": balance,
+        "status":      status,
+    }
+
+
+def set_final_invoice_total(request_id: int, total: float) -> None:
+    """
+    Set the confirmed final invoice total for a completed job.
+    Call this before record_payment().
+
+    After setting this, the balance is automatically:
+        total - $150 deposit - any amount_paid
+    """
+    if total <= 0:
+        raise ValueError("Final invoice total must be greater than zero.")
+
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT id FROM estimate_requests WHERE id = ?", (request_id,)
+        ).fetchone()
+        if not row:
+            raise LookupError(f"Request id={request_id} not found.")
+
+        conn.execute(
+            "UPDATE estimate_requests SET final_invoice_total = ? WHERE id = ?",
+            (total, request_id),
+        )
+
+    logger.info("Final invoice total set to $%.2f for request id=%s", total, request_id)
+
+
+def get_payment_summary(request_id: int) -> dict:
+    """
+    Return a full payment summary for a request — useful for
+    generating invoices or checking status.
+
+    Returns:
+        {
+            "request_id":           int,
+            "final_invoice_total":  float | None,
+            "deposit_paid":         bool,
+            "amount_paid":          float,
+            "balance_due":          float | None,   # None if no final total set yet
+            "payment_status":       str,
+            "payment_method":       str | None,
+            "payment_date":         str | None,
+            "payment_notes":        str | None,
+        }
+    """
+    with get_conn() as conn:
+        row = conn.execute(
+            """SELECT final_invoice_total, deposit_paid,
+                      amount_paid, payment_status,
+                      payment_method, payment_date, payment_notes
+               FROM estimate_requests
+               WHERE id = ?""",
+            (request_id,),
+        ).fetchone()
+
+    if not row:
+        raise LookupError(f"Request id={request_id} not found.")
+
+    fit         = row["final_invoice_total"]
+    amount_paid = row["amount_paid"] or 0.0
+    balance     = compute_balance(fit, amount_paid) if fit is not None else None
+
+    return {
+        "request_id":           request_id,
+        "final_invoice_total":  fit,
+        "deposit_paid":         bool(row["deposit_paid"]),
+        "amount_paid":          amount_paid,
+        "balance_due":          balance,
+        "payment_status":       row["payment_status"] or "unpaid",
+        "payment_method":       row["payment_method"],
+        "payment_date":         row["payment_date"],
+        "payment_notes":        row["payment_notes"],
+    }

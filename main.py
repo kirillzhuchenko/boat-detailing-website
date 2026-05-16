@@ -4,6 +4,10 @@ from flask import Flask, render_template, request, jsonify, abort
 from notifier import send_telegram_message
 from database import init_db, save_estimate, get_request
 from datetime import date
+from database import (set_deposit_paid, record_payment,
+                      set_final_invoice_total, get_payment_summary)
+
+ADMIN_KEY = os.environ.get("ADMIN_KEY", "changeme")
 
 
 # ── Logging ───────────────────────────────────────────────────────────────────
@@ -186,8 +190,6 @@ def terms_of_service():
 
 
 @app.route('/invoice/<int:request_id>')
-
-
 def generate_invoice(request_id):
     req = dict(get_request(request_id) or abort(404))
     line_items, subtotal = [], 0.0
@@ -277,6 +279,152 @@ def mobilization_invoice(request_id):
         inv_num  = f"BWD-{req['id']:04d}-D",
         job_num  = f"BWD-{req['id']:04d}",
     )
+
+
+def _check_admin(req):
+    """Return True if the request carries the correct admin key."""
+    return req.form.get("key") == ADMIN_KEY
+
+
+# ── Set final invoice total ───────────────────────────────────────────────────
+@app.route("/admin/invoice/<int:request_id>/set-total", methods=["POST"])
+def admin_set_total(request_id):
+    """
+    Set the confirmed job total before recording payment.
+
+    POST params:
+        key    — admin password
+        total  — final invoice amount in dollars (e.g. 340.00)
+
+    Example:
+        curl -X POST http://localhost:5000/admin/invoice/5/set-total \
+             -d "key=changeme&total=340"
+    """
+    if not _check_admin(request):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        total = float(request.form.get("total", 0))
+        set_final_invoice_total(request_id, total)
+        return jsonify({
+            "status":     "ok",
+            "request_id": request_id,
+            "final_invoice_total": total,
+            "message": f"Final total set to ${total:.2f} for job #{request_id}.",
+        })
+    except (LookupError, ValueError) as e:
+        return jsonify({"error": str(e)}), 400
+
+
+# ── Record a payment ──────────────────────────────────────────────────────────
+@app.route("/admin/invoice/<int:request_id>/pay", methods=["POST"])
+def admin_record_payment(request_id):
+    """
+    Record a full or partial payment toward the final invoice.
+    Can be called multiple times — amounts accumulate.
+
+    POST params:
+        key     — admin password
+        amount  — amount collected this time (e.g. 95.00)
+        method  — venmo | zelle | cash | card | check | other
+        notes   — optional free-text note
+
+    Example (full payment):
+        curl -X POST http://localhost:5000/admin/invoice/5/pay \
+             -d "key=changeme&amount=190&method=venmo"
+
+    Example (partial):
+        curl -X POST http://localhost:5000/admin/invoice/5/pay \
+             -d "key=changeme&amount=100&method=cash&notes=first installment"
+    """
+    if not _check_admin(request):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        amount = float(request.form.get("amount", 0))
+        method = request.form.get("method", "unspecified")
+        notes  = request.form.get("notes")
+
+        result = record_payment(request_id, amount, method=method, notes=notes)
+
+        return jsonify({
+            "status":      "ok",
+            "request_id":  result["request_id"],
+            "amount_paid": f"${result['amount_paid']:.2f}",
+            "balance_due": f"${result['balance_due']:.2f}",
+            "payment_status": result["status"],
+            "message": (
+                "Paid in full — balance cleared."
+                if result["status"] == "paid_in_full"
+                else f"Partial payment recorded. Balance remaining: ${result['balance_due']:.2f}"
+            ),
+        })
+    except (LookupError, ValueError) as e:
+        return jsonify({"error": str(e)}), 400
+
+
+# ── Check payment status ──────────────────────────────────────────────────────
+@app.route("/admin/invoice/<int:request_id>/status", methods=["GET"])
+def admin_payment_status(request_id):
+    """
+    Get the current payment summary for any job.
+
+    Query params:
+        key — admin password
+
+    Example:
+        curl "http://localhost:5000/admin/invoice/5/status?key=changeme"
+
+    Returns:
+        {
+            "request_id":           5,
+            "final_invoice_total":  340.00,
+            "deposit_paid":         true,
+            "amount_paid":          190.00,
+            "balance_due":          0.00,
+            "payment_status":       "paid_in_full",
+            "payment_method":       "venmo",
+            "payment_date":         "2025-06-15 14:32:00",
+            "payment_notes":        null
+        }
+    """
+    if request.args.get("key") != ADMIN_KEY:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        summary = get_payment_summary(request_id)
+        return jsonify(summary)
+    except LookupError as e:
+        return jsonify({"error": str(e)}), 404
+
+
+# ── Updated deposit route (if not already in main.py) ────────────────────────
+@app.route("/admin/deposit/<int:request_id>/mark-paid", methods=["POST"])
+def mark_deposit_paid(request_id):
+    """
+    Mark the $150 mobilization fee as collected.
+
+    POST params:
+        key    — admin password
+        method — payment method
+
+    Example:
+        curl -X POST http://localhost:5000/admin/deposit/5/mark-paid \
+             -d "key=changeme&method=venmo"
+    """
+    if not _check_admin(request):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    method = request.form.get("method", "unspecified")
+    try:
+        set_deposit_paid(request_id, method=method)
+        return jsonify({
+            "status":     "ok",
+            "request_id": request_id,
+            "message":    f"Deposit marked paid via {method} for job #{request_id}.",
+        })
+    except LookupError as e:
+        return jsonify({"error": str(e)}), 404
 
 
 if __name__ == '__main__':
