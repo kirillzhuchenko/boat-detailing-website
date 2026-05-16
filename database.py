@@ -18,10 +18,27 @@ logger = logging.getLogger(__name__)
 # ── Config ────────────────────────────────────────────────────────────────────
 DB_PATH = os.environ.get("DATABASE_URL", "instance/bluewater.db")
 
+MOBILIZATION_FEE = 150.0   # keep in sync with your rates
+
 VALID_STATUSES = {
     "new", "contacted", "scheduled",
     "in_progress", "completed", "invoiced", "cancelled",
 }
+
+# ── Columns that may not exist on older databases ─────────────────────────────
+# Each tuple: (column_name, full SQL definition)
+# init_db() checks these on every startup and adds any that are missing.
+_MIGRATIONS = [
+    ("deposit_paid",            "INTEGER NOT NULL DEFAULT 0"),
+    ("deposit_paid_at",         "DATETIME"),
+    ("deposit_payment_method",  "TEXT"),
+    ("final_invoice_total",     "REAL"),
+    ("amount_paid",             "REAL NOT NULL DEFAULT 0"),
+    ("payment_status",          "TEXT NOT NULL DEFAULT 'unpaid'"),
+    ("payment_method",          "TEXT"),
+    ("payment_date",            "DATETIME"),
+    ("payment_notes",           "TEXT"),
+]
 
 
 # ── Connection helper ─────────────────────────────────────────────────────────
@@ -45,11 +62,27 @@ def get_conn():
 
 # ── Schema init ───────────────────────────────────────────────────────────────
 def init_db(schema_path: str = "schema.sql") -> None:
-    """Create tables if they don't exist. Safe to call on every startup."""
+    """
+    1. Create tables from schema.sql if they don't exist.
+    2. Apply any column migrations that are missing from an older DB.
+    Safe to call on every startup.
+    """
     with open(schema_path, "r") as f:
         sql = f.read()
+
     with get_conn() as conn:
+        # Step 1 — create tables / triggers / indexes
         conn.executescript(sql)
+
+        # Step 2 — add any columns that don't exist yet
+        existing = {row[1] for row in conn.execute("PRAGMA table_info(estimate_requests)")}
+        for col_name, col_def in _MIGRATIONS:
+            if col_name not in existing:
+                conn.execute(
+                    f"ALTER TABLE estimate_requests ADD COLUMN {col_name} {col_def}"
+                )
+                logger.info("Migration: added column '%s' to estimate_requests", col_name)
+
     logger.info("Database initialised at %s", DB_PATH)
 
 
@@ -223,8 +256,6 @@ def update_status(
     Move a request to a new status.
     The DB trigger auto-logs the change, but we add changed_by / log_notes
     by inserting into the log directly so the trigger row gets overwritten.
-
-    (Alternatively you can drop the trigger and rely solely on this function.)
     """
     if new_status not in VALID_STATUSES:
         raise ValueError(f"Invalid status '{new_status}'. Must be one of: {VALID_STATUSES}")
@@ -241,8 +272,6 @@ def update_status(
             "UPDATE estimate_requests SET status = ?, status_notes = ? WHERE id = ?",
             (new_status, log_notes, request_id),
         )
-        # The trigger fires for the status column update above, but it only
-        # records changed_by='system'. Overwrite that row with richer context:
         conn.execute(
             """INSERT INTO request_status_log
                (request_id, old_status, new_status, changed_by, log_notes)
@@ -281,6 +310,8 @@ def get_status_log(request_id: int) -> list[sqlite3.Row]:
             (request_id,),
         ).fetchall()
 
+
+# ── Deposit helpers ───────────────────────────────────────────────────────────
 def set_deposit_paid(request_id: int, method: str = "unspecified") -> None:
     """Mark the mobilization fee as collected."""
     with get_conn() as conn:
@@ -301,13 +332,8 @@ def set_deposit_paid(request_id: int, method: str = "unspecified") -> None:
         )
     logger.info("Deposit marked paid for request id=%s via %s", request_id, method)
 
-# ══════════════════════════════════════════════════════════════════════════════
-# APPEND these functions to the bottom of your existing database.py
-# ══════════════════════════════════════════════════════════════════════════════
 
-MOBILIZATION_FEE = 150.0   # keep in sync with your rates
-
-
+# ── Invoice helpers ───────────────────────────────────────────────────────────
 def compute_balance(final_invoice_total: float, amount_paid: float) -> float:
     """
     Balance remaining after deposit credit and any payments made.
@@ -318,6 +344,29 @@ def compute_balance(final_invoice_total: float, amount_paid: float) -> float:
     The deposit is always credited automatically.
     """
     return max(0.0, final_invoice_total - MOBILIZATION_FEE - amount_paid)
+
+
+def set_final_invoice_total(request_id: int, total: float) -> None:
+    """
+    Set the confirmed final invoice total for a completed job.
+    Call this before record_payment().
+    """
+    if total <= 0:
+        raise ValueError("Final invoice total must be greater than zero.")
+
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT id FROM estimate_requests WHERE id = ?", (request_id,)
+        ).fetchone()
+        if not row:
+            raise LookupError(f"Request id={request_id} not found.")
+
+        conn.execute(
+            "UPDATE estimate_requests SET final_invoice_total = ? WHERE id = ?",
+            (total, request_id),
+        )
+
+    logger.info("Final invoice total set to $%.2f for request id=%s", total, request_id)
 
 
 def record_payment(
@@ -335,19 +384,13 @@ def record_payment(
         partial      → payment received but balance remains
         paid_in_full → balance is zero or below
 
-    Returns a dict with the updated figures so you can use them
-    in a response or log:
+    Returns a dict with the updated figures:
         {
             "request_id":   int,
-            "amount_paid":  float,   # cumulative total paid
-            "balance_due":  float,   # remaining balance
-            "status":       str,     # unpaid | partial | paid_in_full
+            "amount_paid":  float,
+            "balance_due":  float,
+            "status":       str,
         }
-
-    Raises:
-        LookupError   if the request_id doesn't exist
-        ValueError    if final_invoice_total hasn't been set yet
-        ValueError    if amount <= 0
     """
     if amount <= 0:
         raise ValueError("Payment amount must be greater than zero.")
@@ -355,8 +398,7 @@ def record_payment(
     with get_conn() as conn:
         row = conn.execute(
             """SELECT final_invoice_total, amount_paid
-               FROM estimate_requests
-               WHERE id = ?""",
+               FROM estimate_requests WHERE id = ?""",
             (request_id,),
         ).fetchone()
 
@@ -403,57 +445,17 @@ def record_payment(
     }
 
 
-def set_final_invoice_total(request_id: int, total: float) -> None:
-    """
-    Set the confirmed final invoice total for a completed job.
-    Call this before record_payment().
-
-    After setting this, the balance is automatically:
-        total - $150 deposit - any amount_paid
-    """
-    if total <= 0:
-        raise ValueError("Final invoice total must be greater than zero.")
-
-    with get_conn() as conn:
-        row = conn.execute(
-            "SELECT id FROM estimate_requests WHERE id = ?", (request_id,)
-        ).fetchone()
-        if not row:
-            raise LookupError(f"Request id={request_id} not found.")
-
-        conn.execute(
-            "UPDATE estimate_requests SET final_invoice_total = ? WHERE id = ?",
-            (total, request_id),
-        )
-
-    logger.info("Final invoice total set to $%.2f for request id=%s", total, request_id)
-
-
 def get_payment_summary(request_id: int) -> dict:
     """
     Return a full payment summary for a request — useful for
     generating invoices or checking status.
-
-    Returns:
-        {
-            "request_id":           int,
-            "final_invoice_total":  float | None,
-            "deposit_paid":         bool,
-            "amount_paid":          float,
-            "balance_due":          float | None,   # None if no final total set yet
-            "payment_status":       str,
-            "payment_method":       str | None,
-            "payment_date":         str | None,
-            "payment_notes":        str | None,
-        }
     """
     with get_conn() as conn:
         row = conn.execute(
             """SELECT final_invoice_total, deposit_paid,
                       amount_paid, payment_status,
                       payment_method, payment_date, payment_notes
-               FROM estimate_requests
-               WHERE id = ?""",
+               FROM estimate_requests WHERE id = ?""",
             (request_id,),
         ).fetchone()
 

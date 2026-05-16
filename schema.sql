@@ -87,7 +87,19 @@ CREATE TABLE IF NOT EXISTS estimate_requests (
 
     -- ── Financials ──────────────────────────────────────────
     estimated_total         REAL,           -- frontend-calculated estimate in USD
-    final_invoice_total     REAL            -- filled in after job is completed
+    final_invoice_total     REAL,           -- confirmed total set after job is completed
+
+    -- ── Deposit / mobilization fee ──────────────────────────
+    deposit_paid            INTEGER NOT NULL DEFAULT 0,   -- 1 = collected
+    deposit_paid_at         DATETIME,                     -- timestamp of collection
+    deposit_payment_method  TEXT,                         -- venmo | zelle | cash | card | check | other
+
+    -- ── Final payment tracking ───────────────────────────────
+    amount_paid             REAL NOT NULL DEFAULT 0,      -- cumulative payments toward final invoice
+    payment_status          TEXT NOT NULL DEFAULT 'unpaid', -- unpaid | partial | paid_in_full
+    payment_method          TEXT,                         -- venmo | zelle | cash | card | check | other
+    payment_date            DATETIME,                     -- timestamp of most recent payment
+    payment_notes           TEXT                          -- free-form staff notes, e.g. "paid in two installments"
 );
 
 
@@ -132,4 +144,3 @@ BEGIN
     INSERT INTO request_status_log (request_id, old_status, new_status, changed_by)
     VALUES (OLD.id, OLD.status, NEW.status, 'system');
 END;
-
