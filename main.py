@@ -44,6 +44,7 @@ def get_gallery_images():
     return images
 
 
+
 # ── Telegram message builders ─────────────────────────────────────────────────
 def build_contact_message(first_name, last_name, phone, email, message):
     return (
