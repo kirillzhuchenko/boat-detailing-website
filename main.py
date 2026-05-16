@@ -198,7 +198,7 @@ def generate_invoice(request_id):
     if req.get('svc_hull'):
         rate = 5 if loa < 40 else (8 if loa < 80 else 12)
         base = loa * rate
-        fm = {'light': 1.0, 'mod': 1.75, 'exces': 2.5}.get(req.get('fouling_level'), 1.0)
+        fm = {'light': 1.0, 'mod': 1.5, 'exces': 2.0}.get(req.get('fouling_level'), 1.0)
         fd = {'Monthly': 0.25, 'Bi-monthly': 0.15}.get(req.get('frequency'), 0.0)
         amt = base * fm * (1 - fd)
         subtotal += amt
