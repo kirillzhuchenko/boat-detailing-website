@@ -1,10 +1,13 @@
 import asyncio
 import requests
+from dotenv import load_dotenv
 import os
+
+load_dotenv()
 
 # There's a BOT_TOKEN_SERVICE and CHAT_ID_SERVICE. Can be used in the future.
 # --- Your Secondary Code (Synchronous) ---
-def send_telegram_message(message):
+def send_telegram_notification(message):
     bot_token_contact = os.getenv("BOT_TOKEN_CONTACT")
     chat_id_contact = os.getenv("CHAT_ID_CONTACT")
 
@@ -29,7 +32,7 @@ def send_telegram_message(message):
 
 async def main():
 
-    await asyncio.to_thread(send_telegram_message, "🚀 Script Started: Heavy Task Analysis")
+    await asyncio.to_thread(send_telegram_notification, "🚀 Script Started: Heavy Task Analysis")
 
 if __name__ == "__main__":
 

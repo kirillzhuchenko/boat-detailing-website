@@ -1,11 +1,15 @@
 import os
 import logging
 from flask import Flask, render_template, request, jsonify, abort
-from notifier import send_telegram_message
+from notifier import send_telegram_notification
+from service_notifier import send_telegram_service
 from database import init_db, save_estimate, get_request, update_status
 from datetime import date
 from database import (set_deposit_paid, record_payment,
                       set_final_invoice_total, get_payment_summary)
+from dotenv import load_dotenv
+
+load_dotenv()
 
 ADMIN_KEY = os.environ.get("ADMIN_KEY", "changeme")
 MOBILIZATION_FEE = 150.0
@@ -139,7 +143,7 @@ def _notify_payment(req, amount: float, method: str,
 def _send(lines: list[str]) -> None:
     """Join lines and fire telegram; silently logs on failure."""
     try:
-        send_telegram_message("\n".join(lines))
+        send_telegram_notification("\n".join(lines))
     except Exception as e:
         logger.error("Telegram admin notification failed: %s", e)
 
@@ -209,7 +213,7 @@ def contact():
 
     try:
         text = build_contact_message(first_name, last_name, phone, email, message)
-        send_telegram_message(text)
+        send_telegram_service(text)
     except Exception as e:
         logger.error("Failed to send Telegram contact message: %s", e)
         return jsonify({"status": "error", "errors": ["Could not send your message. Please try again later."]}), 500
@@ -259,7 +263,7 @@ def estimate():
 
     try:
         text = build_schedule_message(data, request_id, estimated_total)
-        send_telegram_message(text)
+        send_telegram_service(text)
     except Exception as e:
         logger.error("Failed to send Telegram estimate message: %s", e)
 
