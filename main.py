@@ -2,12 +2,13 @@ import os
 import logging
 from flask import Flask, render_template, request, jsonify, abort
 from notifier import send_telegram_message
-from database import init_db, save_estimate, get_request
+from database import init_db, save_estimate, get_request, update_status
 from datetime import date
 from database import (set_deposit_paid, record_payment,
                       set_final_invoice_total, get_payment_summary)
 
 ADMIN_KEY = os.environ.get("ADMIN_KEY", "changeme")
+MOBILIZATION_FEE = 150.0
 
 
 # ── Logging ───────────────────────────────────────────────────────────────────
@@ -22,7 +23,7 @@ ALLOWED_EXTENSIONS = {".jpg", ".png"}
 
 # ── DB init on startup ────────────────────────────────────────────────────────
 with app.app_context():
-    init_db()   # creates tables if they don't exist; safe to call every time
+    init_db()   # creates tables + runs column migrations; safe to call every time
 
 
 # ── Gallery ───────────────────────────────────────────────────────────────────
@@ -44,8 +45,106 @@ def get_gallery_images():
     return images
 
 
+# ── Admin notification helpers ────────────────────────────────────────────────
+def _job_header(req) -> str:
+    """One-line vessel + customer summary reused across all admin messages."""
+    name    = f"{req.get('first_name', '')} {req.get('last_name', '')}".strip()
+    vessel  = f"{req.get('vessel_year', '')} {req.get('vessel_make', '')} {req.get('vessel_model', '')}".strip()
+    loa     = req.get('loa_ft')
+    marina  = req.get('marina') or '—'
+    loa_str = f" ({int(loa)} ft)" if loa else ""
+    return (
+        f"👤 *{name}*\n"
+        f"🚢 {vessel}{loa_str}\n"
+        f"📍 {marina}"
+    )
 
-# ── Telegram message builders ─────────────────────────────────────────────────
+
+def _notify_status_change(req, old_status: str, new_status: str,
+                           changed_by: str, notes: str | None) -> None:
+    STATUS_EMOJI = {
+        "new":         "🆕",
+        "contacted":   "📞",
+        "scheduled":   "📅",
+        "in_progress": "🔧",
+        "completed":   "✅",
+        "invoiced":    "🧾",
+        "cancelled":   "❌",
+    }
+    emoji = STATUS_EMOJI.get(new_status, "🔄")
+    lines = [
+        f"{emoji} *Status Update — BWD\\-{req['id']:04d}*",
+        "━━━━━━━━━━━━━━━━━━━━",
+        _job_header(req),
+        "",
+        f"📊 `{old_status}` → `{new_status}`",
+        f"👤 Changed by: {changed_by}",
+    ]
+    if notes:
+        lines.append(f"📝 {notes}")
+    _send(lines)
+
+
+def _notify_deposit_paid(req, method: str) -> None:
+    lines = [
+        f"💰 *Deposit Collected — BWD\\-{req['id']:04d}*",
+        "━━━━━━━━━━━━━━━━━━━━",
+        _job_header(req),
+        "",
+        f"💵 ${MOBILIZATION_FEE:.2f} via {method}",
+        "🔐 Appointment secured",
+    ]
+    _send(lines)
+
+
+def _notify_invoice_total_set(req, total: float) -> None:
+    balance = max(0.0, total - MOBILIZATION_FEE)
+    lines = [
+        f"🧾 *Invoice Total Set — BWD\\-{req['id']:04d}*",
+        "━━━━━━━━━━━━━━━━━━━━",
+        _job_header(req),
+        "",
+        f"💰 Final Total:      ${total:.2f}",
+        f"💳 Deposit Credit:  −${MOBILIZATION_FEE:.2f}",
+        f"⚖️  Balance Due:      ${balance:.2f}",
+    ]
+    _send(lines)
+
+
+def _notify_payment(req, amount: float, method: str,
+                    notes: str | None, result: dict) -> None:
+    status      = result["status"]
+    amount_paid = result["amount_paid"]
+    balance     = result["balance_due"]
+
+    if status == "paid_in_full":
+        status_line = "✅ *Paid in Full — balance cleared*"
+    else:
+        status_line = f"⚖️  Balance Remaining: ${balance:.2f}"
+
+    lines = [
+        f"💳 *Payment Recorded — BWD\\-{req['id']:04d}*",
+        "━━━━━━━━━━━━━━━━━━━━",
+        _job_header(req),
+        "",
+        f"💵 \\+${amount:.2f} via {method}",
+        f"📊 Total Paid: ${amount_paid:.2f}",
+        status_line,
+    ]
+    if notes:
+        lines.append(f"📝 {notes}")
+    _send(lines)
+
+
+def _send(lines: list[str]) -> None:
+    """Join lines and fire telegram; silently logs on failure."""
+    try:
+        send_telegram_message("\n".join(lines))
+    except Exception as e:
+        logger.error("Telegram admin notification failed: %s", e)
+
+
+# ── Telegram message builders (customer-facing) ───────────────────────────────
 def build_contact_message(first_name, last_name, phone, email, message):
     return (
         f"📬 *New Contact Form*\n"
@@ -67,7 +166,6 @@ def build_schedule_message(data, request_id: int, estimated_total: float | None)
     marina     = data.get('marina', '—')
     total_str  = f"${estimated_total:,.2f}" if estimated_total is not None else "N/A"
 
-    # Build a readable services list
     svc_map = {
         'svc_hull':   'Hull Cleaning',
         'svc_anode':  'Anode Replacement',
@@ -123,7 +221,6 @@ def contact():
 def estimate():
     data = request.form.to_dict()
 
-    # ── Server-side validation ────────────────────────────────
     required = {
         'first_name':    'First name',
         'last_name':     'Last name',
@@ -146,10 +243,6 @@ def estimate():
     if errors:
         return jsonify({"status": "error", "errors": errors}), 400
 
-    # ── Parse estimated total sent by the frontend ────────────
-    # The frontend JS calculates this — we trust it as an advisory figure only.
-    # Pass it as a hidden field named `estimated_total` from the JS before submit,
-    # or compute it server-side in the future.
     estimated_total = None
     raw_total = data.get("estimated_total", "").strip()
     if raw_total:
@@ -158,19 +251,16 @@ def estimate():
         except ValueError:
             pass
 
-    # ── Save to DB ────────────────────────────────────────────
     try:
         request_id = save_estimate(data, estimated_total=estimated_total)
     except Exception as e:
         logger.error("Failed to save estimate to DB: %s", e)
         return jsonify({"status": "error", "errors": ["Could not save your request. Please try again later."]}), 500
 
-    # ── Notify via Telegram ───────────────────────────────────
     try:
         text = build_schedule_message(data, request_id, estimated_total)
         send_telegram_message(text)
     except Exception as e:
-        # Don't fail the whole request just because Telegram is down
         logger.error("Failed to send Telegram estimate message: %s", e)
 
     return jsonify({
@@ -213,8 +303,7 @@ def generate_invoice(request_id):
         qty = sum(
             filter(None, [req.get('qty_keel'), req.get('qty_shaft'), req.get('qty_rudder'), req.get('qty_other')])) or 0
         if qty:
-            a = qty * 50;
-            subtotal += a
+            a = qty * 50; subtotal += a
             line_items.append(
                 {'svc': 'Anode Replacement', 'desc': f"{qty}× {req.get('anode_material') or 'standard'} anodes",
                  'qty': f'{qty} ea', 'rate': '$50/ea', 'amt': a})
@@ -224,8 +313,7 @@ def generate_invoice(request_id):
         diam = float(req.get('prop_diam') or 0)
         pr = {'prop_fixed': 25, 'prop_fold': 30}.get(pt)
         if pr and diam:
-            a = pr * diam;
-            subtotal += a
+            a = pr * diam; subtotal += a
             lb = 'Fixed-Blade' if pt == 'prop_fixed' else 'Folding'
             line_items.append({'svc': 'Propeller Service', 'desc': f'{int(diam)}" {lb} — removal & installation',
                                'qty': f'{int(diam)}"', 'rate': f'${pr}/in', 'amt': a})
@@ -243,7 +331,6 @@ def generate_invoice(request_id):
         line_items.append(
             {'svc': 'Additional Service', 'desc': req.get('svc_other_detail') or '—', 'qty': '—', 'rate': 'TBD',
              'amt': None})
-
 
     if req.get('private_dock') == 'yes':
         subtotal += 25
@@ -268,14 +355,14 @@ def generate_invoice(request_id):
         invoice_num=f"BWD-{req['id']:04d}",
     )
 
+
 @app.route('/invoice/<int:request_id>/deposit')
 def mobilization_invoice(request_id):
-    from datetime import date
     req = dict(get_request(request_id) or abort(404))
     return render_template(
         'invoice_mobilization_auto.html',
-        req     = req,
-        paid    = bool(req.get('deposit_paid')),   # ← reads straight from DB now
+        req      = req,
+        paid     = bool(req.get('deposit_paid')),
         inv_date = date.today().strftime('%B %d, %Y'),
         inv_num  = f"BWD-{req['id']:04d}-D",
         job_num  = f"BWD-{req['id']:04d}",
@@ -285,6 +372,46 @@ def mobilization_invoice(request_id):
 def _check_admin(req):
     """Return True if the request carries the correct admin key."""
     return req.form.get("key") == ADMIN_KEY
+
+
+# ── Update job status ─────────────────────────────────────────────────────────
+@app.route("/admin/request/<int:request_id>/status", methods=["POST"])
+def admin_update_status(request_id):
+    """
+    Move a job to a new status and notify via Telegram.
+
+    POST params:
+        key         — admin password
+        status      — new status (new | contacted | scheduled | in_progress |
+                                   completed | invoiced | cancelled)
+        changed_by  — staff name (optional, default: 'staff')
+        notes       — optional context for the transition
+
+    Example:
+        curl -X POST http://localhost:5000/admin/request/5/status \\
+             -d "key=changeme&status=completed&changed_by=Alex&notes=Clean hull, replaced 3 anodes"
+    """
+    if not _check_admin(request):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    new_status = request.form.get("status", "").strip()
+    changed_by = request.form.get("changed_by", "staff").strip()
+    notes      = request.form.get("notes", "").strip() or None
+
+    try:
+        req = dict(get_request(request_id) or abort(404))
+        old_status = req["status"]
+        update_status(request_id, new_status, changed_by=changed_by, log_notes=notes)
+        _notify_status_change(req, old_status, new_status, changed_by, notes)
+        return jsonify({
+            "status":     "ok",
+            "request_id": request_id,
+            "old_status": old_status,
+            "new_status": new_status,
+            "message":    f"Status updated: {old_status} → {new_status}",
+        })
+    except (LookupError, ValueError) as e:
+        return jsonify({"error": str(e)}), 400
 
 
 # ── Set final invoice total ───────────────────────────────────────────────────
@@ -298,7 +425,7 @@ def admin_set_total(request_id):
         total  — final invoice amount in dollars (e.g. 340.00)
 
     Example:
-        curl -X POST http://localhost:5000/admin/invoice/5/set-total \
+        curl -X POST http://localhost:5000/admin/invoice/5/set-total \\
              -d "key=changeme&total=340"
     """
     if not _check_admin(request):
@@ -306,12 +433,14 @@ def admin_set_total(request_id):
 
     try:
         total = float(request.form.get("total", 0))
+        req   = dict(get_request(request_id) or abort(404))
         set_final_invoice_total(request_id, total)
+        _notify_invoice_total_set(req, total)
         return jsonify({
-            "status":     "ok",
-            "request_id": request_id,
+            "status":              "ok",
+            "request_id":          request_id,
             "final_invoice_total": total,
-            "message": f"Final total set to ${total:.2f} for job #{request_id}.",
+            "message":             f"Final total set to ${total:.2f} for job #{request_id}.",
         })
     except (LookupError, ValueError) as e:
         return jsonify({"error": str(e)}), 400
@@ -331,11 +460,11 @@ def admin_record_payment(request_id):
         notes   — optional free-text note
 
     Example (full payment):
-        curl -X POST http://localhost:5000/admin/invoice/5/pay \
+        curl -X POST http://localhost:5000/admin/invoice/5/pay \\
              -d "key=changeme&amount=190&method=venmo"
 
     Example (partial):
-        curl -X POST http://localhost:5000/admin/invoice/5/pay \
+        curl -X POST http://localhost:5000/admin/invoice/5/pay \\
              -d "key=changeme&amount=100&method=cash&notes=first installment"
     """
     if not _check_admin(request):
@@ -344,15 +473,17 @@ def admin_record_payment(request_id):
     try:
         amount = float(request.form.get("amount", 0))
         method = request.form.get("method", "unspecified")
-        notes  = request.form.get("notes")
+        notes  = request.form.get("notes", "").strip() or None
+        req    = dict(get_request(request_id) or abort(404))
 
         result = record_payment(request_id, amount, method=method, notes=notes)
+        _notify_payment(req, amount, method, notes, result)
 
         return jsonify({
-            "status":      "ok",
-            "request_id":  result["request_id"],
-            "amount_paid": f"${result['amount_paid']:.2f}",
-            "balance_due": f"${result['balance_due']:.2f}",
+            "status":         "ok",
+            "request_id":     result["request_id"],
+            "amount_paid":    f"${result['amount_paid']:.2f}",
+            "balance_due":    f"${result['balance_due']:.2f}",
             "payment_status": result["status"],
             "message": (
                 "Paid in full — balance cleared."
@@ -375,19 +506,6 @@ def admin_payment_status(request_id):
 
     Example:
         curl "http://localhost:5000/admin/invoice/5/status?key=changeme"
-
-    Returns:
-        {
-            "request_id":           5,
-            "final_invoice_total":  340.00,
-            "deposit_paid":         true,
-            "amount_paid":          190.00,
-            "balance_due":          0.00,
-            "payment_status":       "paid_in_full",
-            "payment_method":       "venmo",
-            "payment_date":         "2025-06-15 14:32:00",
-            "payment_notes":        null
-        }
     """
     if request.args.get("key") != ADMIN_KEY:
         return jsonify({"error": "Unauthorized"}), 401
@@ -399,7 +517,7 @@ def admin_payment_status(request_id):
         return jsonify({"error": str(e)}), 404
 
 
-# ── Updated deposit route (if not already in main.py) ────────────────────────
+# ── Mark deposit paid ─────────────────────────────────────────────────────────
 @app.route("/admin/deposit/<int:request_id>/mark-paid", methods=["POST"])
 def mark_deposit_paid(request_id):
     """
@@ -410,7 +528,7 @@ def mark_deposit_paid(request_id):
         method — payment method
 
     Example:
-        curl -X POST http://localhost:5000/admin/deposit/5/mark-paid \
+        curl -X POST http://localhost:5000/admin/deposit/5/mark-paid \\
              -d "key=changeme&method=venmo"
     """
     if not _check_admin(request):
@@ -418,7 +536,9 @@ def mark_deposit_paid(request_id):
 
     method = request.form.get("method", "unspecified")
     try:
+        req = dict(get_request(request_id) or abort(404))
         set_deposit_paid(request_id, method=method)
+        _notify_deposit_paid(req, method)
         return jsonify({
             "status":     "ok",
             "request_id": request_id,
