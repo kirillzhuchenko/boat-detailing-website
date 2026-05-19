@@ -17,6 +17,7 @@ body{font-family:'Source Sans Pro',sans-serif;font-weight:300;color:var(--text);
   body{background:#111417;padding:0}
   .page{box-shadow:none;max-width:100%;padding:2cm 2.4cm}
   .no-print{display:none!important}
+  .pay-btn{display:none!important}
   @page{size:A4;margin:0}
 }
 .no-print{position:fixed;top:1.5rem;right:1.5rem}
@@ -82,6 +83,42 @@ body{font-family:'Source Sans Pro',sans-serif;font-weight:300;color:var(--text);
 .trow.grand{background:rgba(255,255,255,.06);border-top:1px solid var(--border-strong)}
 .trow.grand .tl{color:var(--text);letter-spacing:.22rem}
 .trow.grand .ta{font-size:1.15rem}
+
+/* ── Pay / totals side-by-side row ── */
+/* align-items:flex-start keeps both children's tops flush.
+   padding-top on .pay-btns offsets by exactly tot-box border (1px)
+   + trow top padding (.55rem) so buttons sit level with "Subtotal". */
+.pay-tot-row{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:1rem;margin-bottom:2rem
+}
+.pay-tot-row .pay-btns{padding-top:calc(.55rem + 1px)}
+.pay-tot-row .tot-wrap{margin-bottom:0;flex-shrink:0}
+
+/* ── Pay buttons ── */
+.pay-btns{display:flex;gap:.5rem;align-items:flex-start}
+.pay-btn{
+  font-family:'Source Sans Pro',sans-serif;
+  font-size:.55rem;font-weight:600;
+  letter-spacing:.18rem;text-transform:uppercase;
+  padding:.38rem .9rem;border-radius:3px;
+  cursor:pointer;border:none;
+  transition:filter .18s, transform .12s;
+  white-space:nowrap;text-decoration:none;display:inline-block;line-height:1.6
+}
+.pay-btn:hover{filter:brightness(1.15);transform:translateY(-1px)}
+.pay-btn:active{transform:translateY(0);filter:brightness(.95)}
+.pay-instant{
+  background:linear-gradient(135deg,rgba(80,220,140,1),rgba(30,170,100,1));
+  color:#07200f;
+  box-shadow:0 0 12px rgba(80,220,140,.35)
+}
+.pay-card{
+  background:linear-gradient(135deg,rgba(100,155,255,1),rgba(60,100,230,1));
+  color:#fff;
+  box-shadow:0 0 12px rgba(100,155,255,.3)
+}
+
 .terms{font-size:.65rem;color:var(--dim);line-height:1.7;
   border-top:1px solid var(--border);padding-top:.75rem;margin:0 0 1.25rem}
 .doc-footer{display:flex;justify-content:space-between;align-items:flex-end;
@@ -168,20 +205,26 @@ body{font-family:'Source Sans Pro',sans-serif;font-weight:300;color:var(--text);
   </div>
 
   <!-- Totals -->
-  <div class="tot-wrap">
-    <div class="tot-box">
-      <div class="trow">
-        <span class="tl">Subtotal</span>
-        <span class="ta">$150.00</span>
-      </div>
-      <div class="trow grand">
-        {% if paid %}
-        <span class="tl">Payment Received</span>
-        <span class="ta" style="color:rgba(80,220,140,.9)">$150.00 ✓</span>
-        {% else %}
-        <span class="tl">Total Due at Booking</span>
-        <span class="ta">$150.00</span>
-        {% endif %}
+  <div class="pay-tot-row">
+    <div class="pay-btns">
+      <a href="/static/Payment_Methods.pdf" target="_blank" class="pay-btn pay-instant">⚡&nbsp; Instant Payment</a>
+      <a href="" class="pay-btn pay-card">💳&nbsp; Card Payment</a>
+    </div>
+    <div class="tot-wrap">
+      <div class="tot-box">
+        <div class="trow">
+          <span class="tl">Subtotal</span>
+          <span class="ta">$150.00</span>
+        </div>
+        <div class="trow grand">
+          {% if paid %}
+          <span class="tl">Payment Received</span>
+          <span class="ta" style="color:rgba(80,220,140,.9)">$150.00 ✓</span>
+          {% else %}
+          <span class="tl">Total Due at Booking</span>
+          <span class="ta">$150.00</span>
+          {% endif %}
+        </div>
       </div>
     </div>
   </div>
@@ -198,9 +241,8 @@ body{font-family:'Source Sans Pro',sans-serif;font-weight:300;color:var(--text);
   <div class="doc-footer">
     <div>
       <strong style="font-weight:600;letter-spacing:.12rem;text-transform:uppercase;font-size:.68rem">Bluewater Yacht Detailing</strong><br>
-      901 2nd Ave N, Kent, WA 98032 &nbsp;·&nbsp; (123) 456-7890 &nbsp;·&nbsp; myemail@gmail.com
+      901 2nd Ave N, Kent, WA 98032 &nbsp;·&nbsp; (123) 456-7890 &nbsp;·&nbsp; ip.kz.llc@outlook.com
     </div>
-    <div class="sig-line">Authorized Signature</div>
   </div>
 
 </div>
