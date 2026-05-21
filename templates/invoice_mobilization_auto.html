@@ -85,26 +85,24 @@ body{font-family:'Source Sans Pro',sans-serif;font-weight:300;color:var(--text);
 .trow.grand .ta{font-size:1.15rem}
 
 /* ── Pay / totals side-by-side row ── */
-/* align-items:flex-start keeps both children's tops flush.
-   padding-top on .pay-btns offsets by exactly tot-box border (1px)
-   + trow top padding (.55rem) so buttons sit level with "Subtotal". */
 .pay-tot-row{
   display:flex;align-items:flex-start;justify-content:space-between;
   gap:1rem;margin-bottom:2rem
 }
-.pay-tot-row .pay-btns{padding-top:calc(.55rem + 1px)}
+.pay-tot-row .pay-btns{padding-top:calc(0 + 1px)}
 .pay-tot-row .tot-wrap{margin-bottom:0;flex-shrink:0}
 
-/* ── Pay buttons ── */
-.pay-btns{display:flex;gap:.5rem;align-items:flex-start}
+/* ── Pay buttons — matches invoice_final_auto ── */
+.pay-btns{display:flex;gap:.65rem;align-items:stretch;flex-direction:column;flex-shrink:0;min-width:14rem}
 .pay-btn{
   font-family:'Source Sans Pro',sans-serif;
-  font-size:.55rem;font-weight:600;
+  font-size:.62rem;font-weight:600;
   letter-spacing:.18rem;text-transform:uppercase;
-  padding:.38rem .9rem;border-radius:3px;
+  padding:.55rem 1.1rem;border-radius:3px;
   cursor:pointer;border:none;
   transition:filter .18s, transform .12s;
-  white-space:nowrap;text-decoration:none;display:inline-block;line-height:1.6
+  white-space:nowrap;text-decoration:none;
+  display:block;line-height:1.6;text-align:center;width:100%
 }
 .pay-btn:hover{filter:brightness(1.15);transform:translateY(-1px)}
 .pay-btn:active{transform:translateY(0);filter:brightness(.95)}
@@ -123,8 +121,6 @@ body{font-family:'Source Sans Pro',sans-serif;font-weight:300;color:var(--text);
   border-top:1px solid var(--border);padding-top:.75rem;margin:0 0 1.25rem}
 .doc-footer{display:flex;justify-content:space-between;align-items:flex-end;
   border-top:1px solid var(--border);padding-top:1rem;font-size:.68rem;color:var(--muted)}
-.sig-line{border-top:1px solid rgba(255,255,255,.35);min-width:13rem;padding-top:.3rem;
-  font-size:.58rem;letter-spacing:.18rem;text-transform:uppercase;color:var(--dim);text-align:center}
 </style>
 </head>
 <body>
@@ -204,11 +200,13 @@ body{font-family:'Source Sans Pro',sans-serif;font-weight:300;color:var(--text);
     </div>
   </div>
 
-  <!-- Totals -->
+  <!-- Totals + Payment buttons -->
   <div class="pay-tot-row">
     <div class="pay-btns">
+      {% if not paid %}
       <a href="/static/Payment_Methods.pdf" target="_blank" class="pay-btn pay-instant">⚡&nbsp; Instant Payment</a>
       <a href="https://buy.stripe.com/test_00waEQ4kP64g7dZfYI9Ve00" target="_blank" class="pay-btn pay-card">💳&nbsp; Card Payment</a>
+      {% endif %}
     </div>
     <div class="tot-wrap">
       <div class="tot-box">
@@ -231,7 +229,7 @@ body{font-family:'Source Sans Pro',sans-serif;font-weight:300;color:var(--text);
 
   <!-- Terms -->
   <div class="terms">
-    This invoice confirms your service booking with Bluewater Yacht Detailing.
+    This invoice confirms your service booking with IP ZHUCHENKO LLC (Bluewater Yacht Detailing).
     The Crew Mobilization Fee of $150.00 is required to secure your appointment and will be
     credited in full toward your final service invoice. Final pricing is confirmed before work begins.
     No additional work will be performed without customer approval.

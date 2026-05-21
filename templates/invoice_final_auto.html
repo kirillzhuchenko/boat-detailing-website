@@ -83,7 +83,7 @@ body{font-family:'Source Sans Pro',sans-serif;font-weight:300;color:var(--text);
 /* ── Vessel bar ── */
 .vessel{border:1px solid var(--border);border-left:3px solid var(--border-strong);border-radius:0 3px 3px 0;
   padding:.8rem 1.25rem;margin-bottom:2rem;display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem 1.2rem;font-size:.78rem}
-.vi strong{display:block;font-size:.55rem;font-weight:600;letter-spacing:.2rem;text-transform:uppercase;color:var(--muted);margin-bottom:.15rem}
+.vi strong{display:block;font-size:.72rem;font-weight:600;letter-spacing:.2rem;text-transform:uppercase;color:var(--muted);margin-bottom:.15rem}
 
 /* ── Line items table ── */
 .table-wrap{margin-bottom:1.75rem;overflow-x:auto}
@@ -124,15 +124,15 @@ td.tbd{text-align:right;color:var(--dim);font-style:italic}
 .pay-tot-row .tot-wrap{margin-bottom:0;flex-shrink:0}
 
 /* ── Pay buttons ── */
-.pay-btns{display:flex;gap:.5rem;align-items:flex-start}
+.pay-btns{display:flex;gap:.65rem;align-items:stretch;flex-direction:column;flex-shrink:0;min-width:14rem}
 .pay-btn{
   font-family:'Source Sans Pro',sans-serif;
-  font-size:.55rem;font-weight:600;
+  font-size:.72rem;font-weight:600;
   letter-spacing:.18rem;text-transform:uppercase;
-  padding:.38rem .9rem;border-radius:3px;
+  padding:.85rem 1.4rem;border-radius:3px;
   cursor:pointer;border:none;
   transition:filter .18s, transform .12s;
-  white-space:nowrap;text-decoration:none;display:inline-block;line-height:1.6
+  white-space:nowrap;text-decoration:none;display:block;line-height:1.6;text-align:center;width:100%
 }
 .pay-btn:hover{filter:brightness(1.15);transform:translateY(-1px)}
 .pay-btn:active{transform:translateY(0);filter:brightness(.95)}
@@ -145,6 +145,14 @@ td.tbd{text-align:right;color:var(--dim);font-style:italic}
   background:linear-gradient(135deg,rgba(100,155,255,1),rgba(60,100,230,1));
   color:#fff;
   box-shadow:0 0 12px rgba(100,155,255,.3)
+}
+/* Disabled state when already paid */
+.pay-btn-disabled{
+  background:rgba(255,255,255,.08);
+  color:var(--dim);
+  cursor:not-allowed;
+  box-shadow:none;
+  pointer-events:none
 }
 
 /* ── Notes / Terms ── */
@@ -268,12 +276,24 @@ td.tbd{text-align:right;color:var(--dim);font-style:italic}
     </table>
   </div>
 
-  <!-- ── Totals ── -->
+  <!-- ── Totals + Payment buttons ── -->
   <div class="pay-tot-row">
+
+    <!-- Payment buttons (hidden after paid in full) -->
     <div class="pay-btns">
-      <a href="/static/Payment_Methods.pdf" target="_blank" class="pay-btn pay-instant">⚡&nbsp; Instant Payment</a>
-      <a href="" class="pay-btn pay-card">💳&nbsp; Card Payment</a>
+      {% if payment_status == 'paid_in_full' %}
+        {# Paid — show a disabled confirmation badge instead of buttons #}
+        <span class="pay-btn pay-btn-disabled">✓ &nbsp;Paid in Full</span>
+      {% else %}
+        <a href="/static/Payment_Methods.pdf" target="_blank" class="pay-btn pay-instant">
+          ⚡&nbsp; Instant Payment
+        </a>
+        <a href="/invoice/{{ req.id }}/checkout" target="_blank" class="pay-btn pay-card">
+          💳&nbsp; Card Payment
+        </a>
+      {% endif %}
     </div>
+
     <div class="tot-wrap">
       <div class="tot-box">
 
@@ -341,7 +361,6 @@ td.tbd{text-align:right;color:var(--dim);font-style:italic}
       <strong style="font-weight:600;letter-spacing:.12rem;text-transform:uppercase;font-size:.68rem">Bluewater Yacht Detailing</strong><br>
       901 2nd Ave N, Kent, WA 98032 &nbsp;·&nbsp; (123) 456-7890 &nbsp;·&nbsp; ip.kz.llc@outlook.com
     </div>
-
   </div>
 
 </div>

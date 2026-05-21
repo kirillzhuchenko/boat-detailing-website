@@ -38,6 +38,8 @@ _MIGRATIONS = [
     ("payment_method",          "TEXT"),
     ("payment_date",            "DATETIME"),
     ("payment_notes",           "TEXT"),
+    ("stripe_session_id",       "TEXT"),       # ← add this
+    ("stripe_session_url",      "TEXT"),       # ← add this
 ]
 
 
@@ -477,3 +479,81 @@ def get_payment_summary(request_id: int) -> dict:
         "payment_date":         row["payment_date"],
         "payment_notes":        row["payment_notes"],
     }
+
+
+# ── Stripe Checkout Session helpers ──────────────────────────────────────────
+# These functions belong at the bottom of database.py.
+# The two columns they rely on are added automatically by the migration
+# list below — append these entries to the existing _MIGRATIONS tuple in
+# database.py:
+#
+#     ("stripe_session_id",  "TEXT"),
+#     ("stripe_session_url", "TEXT"),
+
+
+def save_stripe_session(request_id: int, session_id: str, session_url: str) -> None:
+    """
+    Persist a Stripe Checkout Session ID and its hosted URL against a job.
+    Called immediately after creating the session so that page refreshes
+    can reuse the same Stripe URL instead of creating a new session.
+
+    Parameters
+    ----------
+    request_id  : int   — job row ID in estimate_requests
+    session_id  : str   — Stripe session id, e.g. "cs_live_..."
+    session_url : str   — Full hosted URL, e.g. "https://checkout.stripe.com/..."
+    """
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT id FROM estimate_requests WHERE id = ?", (request_id,)
+        ).fetchone()
+        if not row:
+            raise LookupError(f"Request id={request_id} not found.")
+
+        conn.execute(
+            """UPDATE estimate_requests
+               SET stripe_session_id  = ?,
+                   stripe_session_url = ?
+               WHERE id = ?""",
+            (session_id, session_url, request_id),
+        )
+
+    logger.info(
+        "Stripe session saved for request id=%s: session_id=%s",
+        request_id, session_id,
+    )
+
+
+def get_stripe_session(request_id: int) -> tuple[str | None, str | None]:
+    """
+    Return the cached (session_id, session_url) for a job, or (None, None)
+    if no session has been created yet.
+    """
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT stripe_session_id, stripe_session_url "
+            "FROM estimate_requests WHERE id = ?",
+            (request_id,),
+        ).fetchone()
+
+    if not row:
+        raise LookupError(f"Request id={request_id} not found.")
+
+    return row["stripe_session_id"], row["stripe_session_url"]
+
+
+def clear_stripe_session(request_id: int) -> None:
+    """
+    Wipe the cached session so a fresh one will be created on the next
+    visit.  Call this from a Stripe webhook handler after a session
+    expires or is completed.
+    """
+    with get_conn() as conn:
+        conn.execute(
+            "UPDATE estimate_requests "
+            "SET stripe_session_id = NULL, stripe_session_url = NULL "
+            "WHERE id = ?",
+            (request_id,),
+        )
+
+    logger.info("Stripe session cleared for request id=%s", request_id)

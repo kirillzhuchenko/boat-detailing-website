@@ -30,6 +30,221 @@ with app.app_context():
     init_db()   # creates tables + runs column migrations; safe to call every time
 
 
+"""
+app_stripe_routes.py
+--------------------
+Async Flask routes to append / merge into app.py.
+
+Prerequisites
+-------------
+1.  pip install "stripe[async]"
+2.  Add STRIPE_SECRET_KEY (and optionally BASE_URL) to your .env
+3.  Append the two migration entries to _MIGRATIONS in database.py:
+        ("stripe_session_id",  "TEXT"),
+        ("stripe_session_url", "TEXT"),
+4.  Append the three helper functions from database_stripe_additions.py
+    into database.py (save_stripe_session, get_stripe_session, clear_stripe_session).
+5.  Add these imports to app.py:
+        import asyncio
+        import stripe as stripe_lib
+        from stripe_payments import create_invoice_checkout_session
+        from database import save_stripe_session, get_stripe_session, clear_stripe_session
+6.  Copy the three routes below into app.py.
+"""
+
+import asyncio
+import stripe as stripe_lib
+from flask import redirect, jsonify
+from stripe_payments import create_invoice_checkout_session
+from database import (
+    get_request, save_stripe_session,
+    get_stripe_session, clear_stripe_session,
+)
+
+# ── Card payment: create / reuse Stripe Checkout Session ─────────────────────
+
+@app.route("/invoice/<int:request_id>/checkout")
+async def stripe_checkout(request_id):
+    """
+    Async route that issues (or reuses) a Stripe Checkout Session for the
+    balance due on a final invoice, then redirects the customer to Stripe.
+
+    Flow
+    ----
+    1.  Load the job from the DB — 404 if not found or no final total set.
+    2.  Check whether a live Stripe session is already cached for this job.
+        If yes, redirect straight to it (avoids creating duplicate sessions
+        when the customer reloads the page or clicks the button twice).
+    3.  If no cached session (or the cached one was expired/paid), create a
+        new Checkout Session via the Stripe API (async).
+    4.  Persist the new session ID + URL in the DB, then redirect.
+    """
+    req = dict(get_request(request_id) or abort(404))
+
+    final_total = req.get("final_invoice_total")
+    if not final_total:
+        abort(404, description=(
+            f"No final invoice total set for job #{request_id}. "
+            "Use /admin/invoice/<id>/set-total first."
+        ))
+
+    amount_paid    = req.get("amount_paid") or 0.0
+    payment_status = req.get("payment_status") or "unpaid"
+
+    # Already fully paid — nothing to collect.
+    if payment_status == "paid_in_full":
+        return redirect(f"/invoice/{request_id}/final")
+
+    # ── Try to reuse an existing live session ────────────────────────────────
+    cached_session_id, cached_session_url = get_stripe_session(request_id)
+
+    if cached_session_id and cached_session_url:
+        # Verify the session is still open (not expired / already paid).
+        try:
+            existing = await stripe_lib.checkout.Session.retrieve_async(cached_session_id)
+            if existing.status == "open":
+                logger.info(
+                    "Reusing existing Stripe session %s for job #%s",
+                    cached_session_id, request_id,
+                )
+                return redirect(existing.url)
+        except stripe_lib.error.StripeError as e:
+            # Session gone or invalid — fall through to create a new one.
+            logger.warning(
+                "Cached Stripe session %s could not be retrieved: %s — creating new one.",
+                cached_session_id, e,
+            )
+        # Clear the stale cache before creating a fresh session.
+        clear_stripe_session(request_id)
+
+    # ── Create a new Checkout Session ────────────────────────────────────────
+    customer_name  = f"{req.get('first_name', '')} {req.get('last_name', '')}".strip()
+    customer_email = req.get("email", "")
+    invoice_num    = f"BWD-{req['id']:04d}-F"
+
+    try:
+        session = await create_invoice_checkout_session(
+            request_id     = request_id,
+            invoice_num    = invoice_num,
+            final_total    = final_total,
+            amount_paid    = amount_paid,
+            customer_name  = customer_name,
+            customer_email = customer_email,
+        )
+    except ValueError as e:
+        # Balance is zero — redirect back to the invoice.
+        logger.info("Checkout skipped for job #%s: %s", request_id, e)
+        return redirect(f"/invoice/{request_id}/final")
+    except stripe_lib.error.StripeError as e:
+        logger.error("Stripe error creating session for job #%s: %s", request_id, e)
+        abort(502, description="Payment gateway error — please try again or contact us.")
+
+    # Persist session so re-visits reuse the same Stripe URL.
+    save_stripe_session(request_id, session.id, session.url)
+
+    return redirect(session.url, code=303)
+
+
+# ── Stripe webhook: keep payment status in sync ───────────────────────────────
+
+@app.route("/stripe/webhook", methods=["POST"])
+async def stripe_webhook():
+    """
+    Receive Stripe webhook events and update the job record accordingly.
+
+    Events handled
+    --------------
+    checkout.session.completed  — record the payment and mark status.
+    checkout.session.expired    — clear cached session so a new one is created.
+
+    Set up in the Stripe Dashboard (or CLI):
+        stripe listen --forward-to localhost:5000/stripe/webhook
+
+    Required env var:
+        STRIPE_WEBHOOK_SECRET — whsec_...
+    """
+    payload    = request.get_data()
+    sig_header = request.headers.get("Stripe-Signature", "")
+    secret     = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+
+    try:
+        event = stripe_lib.Webhook.construct_event(payload, sig_header, secret)
+    except ValueError:
+        logger.warning("Stripe webhook: invalid payload")
+        return jsonify({"error": "Invalid payload"}), 400
+    except stripe_lib.error.SignatureVerificationError:
+        logger.warning("Stripe webhook: invalid signature")
+        return jsonify({"error": "Invalid signature"}), 400
+
+    event_type = event["type"]
+    session    = event["data"]["object"]
+
+    # Pull the job ID we stored in metadata when creating the session.
+    request_id_str = (session.get("metadata") or {}).get("request_id")
+    if not request_id_str:
+        return jsonify({"status": "ignored — no request_id in metadata"}), 200
+
+    request_id = int(request_id_str)
+
+    if event_type == "checkout.session.completed":
+        amount_received = (session.get("amount_total") or 0) / 100  # cents → dollars
+        payment_method  = "card"  # Checkout Sessions use card
+
+        logger.info(
+            "Stripe webhook: checkout.session.completed for job #%s — $%.2f",
+            request_id, amount_received,
+        )
+
+        try:
+            result = record_payment(
+                request_id,
+                amount_received,
+                method = payment_method,
+                notes  = f"Stripe Checkout Session {session['id']}",
+            )
+            # Clear the cached session — it's been paid.
+            clear_stripe_session(request_id)
+
+            req = dict(get_request(request_id))
+            _notify_payment(req, amount_received, payment_method, None, result)
+
+        except (LookupError, ValueError) as e:
+            logger.error("webhook: failed to record payment for job #%s: %s", request_id, e)
+            return jsonify({"error": str(e)}), 500
+
+    elif event_type == "checkout.session.expired":
+        logger.info(
+            "Stripe webhook: session expired for job #%s — clearing cache", request_id
+        )
+        try:
+            clear_stripe_session(request_id)
+        except LookupError:
+            pass  # Job may already be gone; ignore.
+
+    return jsonify({"status": "ok"}), 200
+
+
+# ── Payment confirmed landing page ────────────────────────────────────────────
+
+@app.route("/invoice/<int:request_id>/paid")
+def payment_confirmed(request_id):
+    """
+    Success page shown after Stripe redirects the customer back.
+    Renders the final invoice with the updated payment status.
+
+    Stripe appends ?session_id=cs_... automatically via the success_url
+    template variable {CHECKOUT_SESSION_ID}; we use it for display only.
+    """
+    req = dict(get_request(request_id) or abort(404))
+    return render_template(
+        "payment_confirmed.html",
+        req        = req,
+        invoice_num= f"BWD-{req['id']:04d}-F",
+        session_id = request.args.get("session_id", ""),
+    )
+
+
+
 # ── Gallery ───────────────────────────────────────────────────────────────────
 @app.route('/')
 def home():
