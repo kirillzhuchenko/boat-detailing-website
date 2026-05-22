@@ -522,10 +522,10 @@ def generate_invoice(request_id):
         qty = sum(
             filter(None, [req.get('qty_keel'), req.get('qty_shaft'), req.get('qty_rudder'), req.get('qty_other')])) or 0
         if qty:
-            a = qty * 50; subtotal += a
+            a = qty * 30; subtotal += a
             line_items.append(
-                {'svc': 'Anode Replacement', 'desc': f"{qty}× {req.get('anode_material') or 'standard'} anodes",
-                 'qty': f'{qty} ea', 'rate': '$50/ea', 'amt': a})
+                {'svc': 'Anode Replacement (Labor)', 'desc': f"{qty}× {req.get('anode_material') or 'standard'} anodes",
+                 'qty': f'{qty} ea', 'rate': '$30/ea', 'amt': a})
 
     if req.get('svc_prop') and req.get('prop_inst_required') == 'yes':
         pt = req.get('prop_type')
@@ -562,14 +562,14 @@ def generate_invoice(request_id):
         line_items.append(
             {'svc': 'Expedited Service', 'desc': 'Priority scheduling', 'qty': '—', 'rate': '$600', 'amt': 600})
 
-    subtotal += 150
+    subtotal += 100
     line_items.append({'svc': 'Crew Mobilization Fee', 'desc': 'Applied toward final invoice at completion', 'qty': '—',
-                       'rate': '$150', 'amt': 150})
+                       'rate': '$100', 'amt': 100})
 
     return render_template(
         'invoice_dark_auto.html',
         req=req, line_items=line_items, subtotal=subtotal,
-        balance_due=subtotal - 150,
+        balance_due=subtotal - 100,
         invoice_date=date.today().strftime('%B %d, %Y'),
         invoice_num=f"BWD-{req['id']:04d}",
     )
@@ -633,11 +633,11 @@ def generate_final_invoice(request_id):
             req.get('qty_rudder'), req.get('qty_other'),
         ])) or 0
         if qty:
-            a = qty * 50; subtotal += a
+            a = qty * 30; subtotal += a
             line_items.append({
-                'svc': 'Anode Replacement',
+                'svc': 'Anode Replacement (Labor)',
                 'desc': f"{qty}× {req.get('anode_material') or 'standard'} anodes",
-                'qty': f'{qty} ea', 'rate': '$50/ea', 'amt': a,
+                'qty': f'{qty} ea', 'rate': '$30/ea', 'amt': a,
             })
 
     if req.get('svc_prop') and req.get('prop_inst_required') == 'yes':
