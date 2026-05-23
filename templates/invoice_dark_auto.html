@@ -35,8 +35,6 @@ body{font-family:'Source Sans Pro',sans-serif;font-weight:300;color:var(--text);
     padding-bottom:2rem;margin-bottom:2rem;border-bottom:1px solid var(--border)}
 .brand-row{display:flex;align-items:center;gap:1rem}
 .logo-img{height:3.8rem;width:auto;border-radius:50%;display:block;flex-shrink:0}
-.brand-icon{width:3.2rem;height:3.2rem;border:1px solid var(--border-strong);border-radius:50%;
-  display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
 .brand-name{font-size:1rem;font-weight:600;letter-spacing:.35rem;text-transform:uppercase;line-height:1.2}
 .brand-tag{font-size:.58rem;letter-spacing:.22rem;text-transform:uppercase;color:var(--muted);margin-top:.25rem}
 .co-info{font-size:.72rem;color:var(--muted);line-height:1.85;margin-top:.5rem}
@@ -71,6 +69,8 @@ td{padding:.55rem .75rem;color:var(--muted);vertical-align:middle}
 td:first-child{font-weight:600;color:var(--text)}
 td.r{text-align:right;font-weight:600;color:var(--text)}
 td.tbd{text-align:right;color:var(--dim);font-style:italic}
+td.sub{font-size:.75rem;padding-left:1.5rem;color:var(--dim)}
+td.sub:first-child{font-weight:300;color:var(--dim)}
 .tot-wrap{display:flex;justify-content:flex-end;margin-bottom:2rem}
 .tot-box{border:1px solid var(--border);border-radius:3px;min-width:22rem;overflow:hidden}
 .trow{display:flex;justify-content:space-between;align-items:center;padding:.5rem 1rem;border-bottom:1px solid var(--border);font-size:.8rem}
@@ -115,6 +115,7 @@ td.tbd{text-align:right;color:var(--dim);font-style:italic}
       <div><span class="status-badge">Estimate</span></div>
     </div>
   </div>
+
   <!-- Meta -->
   <div class="meta">
     <div class="ms">
@@ -130,13 +131,15 @@ td.tbd{text-align:right;color:var(--dim);font-style:italic}
       <div class="fr fr-r"><span class="fl">Frequency</span><span class="fv">{{ req.frequency or 'One-time' }}</span></div>
     </div>
   </div>
+
   <!-- Vessel -->
   <div class="vessel">
     <div class="vi"><strong>Vessel Name</strong>{{ req.vessel_name }}</div>
     <div class="vi"><strong>Year / Make / Model</strong>{{ req.vessel_year }} {{ req.vessel_make }} {{ req.vessel_model }}</div>
     <div class="vi"><strong>LOA</strong>{{ req.loa_ft | int }} ft</div>
-    <div class="vi"><strong>Marina / Slip</strong>{{ req.marina }}{% if req.slip %}, {{ req.slip }}{% endif %}</div>
+    <div class="vi"><strong>Marina / Slip</strong>{{ req.marina }}{% if req.slip %}, {{ req.slip }}{% endif %}{% if req.city %} — {{ req.city }}{% endif %}</div>
   </div>
+
   <!-- Table -->
   <div class="table-wrap">
     <table>
@@ -163,29 +166,36 @@ td.tbd{text-align:right;color:var(--dim);font-style:italic}
       </tbody>
     </table>
   </div>
+
   <!-- Totals -->
   <div class="tot-wrap">
     <div class="tot-box">
       <div class="trow"><span class="tl">Subtotal</span><span class="ta">${{ "%.2f"|format(subtotal) }}</span></div>
-      <div class="trow"><span class="tl">Crew Mobilization (paid at booking)</span><span class="ta" style="color:var(--muted)">−$100.00</span></div>
-      <div class="trow grand"><span class="tl">Balance Due</span><span class="ta">${{ "%.2f"|format(balance_due) }}</span></div>
+      <div class="trow"><span class="tl">Crew Mobilization (paid at booking)</span><span class="ta" style="color:var(--muted)">−${{ "%.2f"|format(mobilization_fee) }}</span></div>
+      <div class="trow">
+        <span class="tl" style="color:var(--dim);font-size:.55rem">Sales tax calculated at time of final invoice</span>
+        <span class="ta" style="color:var(--dim)">TBD</span>
+      </div>
+      <div class="trow grand"><span class="tl">Estimated Balance Due</span><span class="ta">${{ "%.2f"|format(balance_due) }}</span></div>
     </div>
   </div>
+
   {% if req.notes %}
   <div style="margin-bottom:1.5rem">
     <div class="sh">Notes / Special Instructions</div>
     <div class="notes-box">{{ req.notes }}</div>
   </div>
   {% endif %}
+
   <div class="terms">
-    All rates are estimates. Final pricing confirmed before work begins. Any work requested beyond the original scope will be discussed and approved by the customer before proceeding and billed separately. A Crew Mobilization fee of $150 is required at booking and is applied toward the final invoice total.
+    All rates are estimates. Final pricing confirmed before work begins. Any work requested beyond the original scope will be discussed and approved by the customer before proceeding and billed separately. A Crew Mobilization fee of ${{ "%.0f"|format(mobilization_fee) }} is required at booking and is applied toward the final invoice total. Sales tax will be calculated based on the marina city and applied to the final invoice.
   </div>
+
   <div class="doc-footer">
     <div>
       <strong style="font-weight:600;letter-spacing:.12rem;text-transform:uppercase;font-size:.68rem">Bluewater Yacht Detailing</strong><br>
       901 2nd Ave N, Kent, WA 98032 &nbsp;·&nbsp; (123) 456-7890 &nbsp;·&nbsp; ip.kz.llc@outlook.com
     </div>
-    <div class="sig-line">Authorized Signature</div>
   </div>
 </div>
 </body>

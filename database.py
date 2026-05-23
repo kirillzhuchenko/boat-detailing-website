@@ -16,9 +16,9 @@ from contextlib import contextmanager
 logger = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
-DB_PATH = os.environ.get("DATABASE_URL", "instance/bluewater.db")
-
-MOBILIZATION_FEE = 150.0   # keep in sync with your rates
+DB_PATH          = os.environ.get("DATABASE_URL", "instance/bluewater.db")
+MOBILIZATION_FEE = 100.0    # keep in sync with app.py
+DEFAULT_TAX_RATE = 10.4     # fallback when city is not in the lookup table
 
 VALID_STATUSES = {
     "new", "contacted", "scheduled",
@@ -26,8 +26,6 @@ VALID_STATUSES = {
 }
 
 # ── Columns that may not exist on older databases ─────────────────────────────
-# Each tuple: (column_name, full SQL definition)
-# init_db() checks these on every startup and adds any that are missing.
 _MIGRATIONS = [
     ("deposit_paid",            "INTEGER NOT NULL DEFAULT 0"),
     ("deposit_paid_at",         "DATETIME"),
@@ -38,8 +36,13 @@ _MIGRATIONS = [
     ("payment_method",          "TEXT"),
     ("payment_date",            "DATETIME"),
     ("payment_notes",           "TEXT"),
-    ("stripe_session_id",       "TEXT"),       # ← add this
-    ("stripe_session_url",      "TEXT"),       # ← add this
+    ("stripe_session_id",       "TEXT"),
+    ("stripe_session_url",      "TEXT"),
+    # ── new columns ──
+    ("city",                    "TEXT"),
+    ("anode_unit_price",        "REAL"),
+    ("tax_rate",                "REAL NOT NULL DEFAULT 10.4"),
+    ("invoice_notes",           "TEXT"),
 ]
 
 
@@ -73,10 +76,7 @@ def init_db(schema_path: str = "schema.sql") -> None:
         sql = f.read()
 
     with get_conn() as conn:
-        # Step 1 — create tables / triggers / indexes
         conn.executescript(sql)
-
-        # Step 2 — add any columns that don't exist yet
         existing = {row[1] for row in conn.execute("PRAGMA table_info(estimate_requests)")}
         for col_name, col_def in _MIGRATIONS:
             if col_name not in existing:
@@ -89,20 +89,23 @@ def init_db(schema_path: str = "schema.sql") -> None:
 
 
 # ── Save a new estimate request ───────────────────────────────────────────────
-def save_estimate(form: dict, estimated_total: float | None = None) -> int:
+def save_estimate(
+    form: dict,
+    estimated_total: float | None = None,
+    tax_rate: float = DEFAULT_TAX_RATE,
+) -> int:
     """
     Insert a new estimate_requests row from the POST form dict.
     Returns the new row id.
 
-    The form dict keys match the HTML name= attributes.
-    Missing optional fields default to None / 0.
+    tax_rate is computed by the caller (app.py) from the customer's city
+    and passed in so database.py doesn't need the city→rate lookup table.
     """
 
     def txt(key):
         return form.get(key, "").strip() or None
 
     def flag(key):
-        """Checkbox: present in FormData means checked (value doesn't matter)."""
         return 1 if key in form else 0
 
     def num(key):
@@ -121,7 +124,7 @@ def save_estimate(form: dict, estimated_total: float | None = None) -> int:
         vessel_name, vessel_year, vessel_make, vessel_model,
         vessel_type, vessel_type_other,
         hull_material, hull_material_other,
-        loa_ft, drive_type, marina, slip,
+        loa_ft, drive_type, marina, city, slip,
 
         -- services
         svc_hull, svc_anode, svc_prop, svc_rudder, svc_other, svc_other_detail,
@@ -144,13 +147,13 @@ def save_estimate(form: dict, estimated_total: float | None = None) -> int:
         notes, referral,
 
         -- financials
-        estimated_total
+        estimated_total, tax_rate
     ) VALUES (
         :first_name, :last_name, :email, :phone,
         :vessel_name, :vessel_year, :vessel_make, :vessel_model,
         :vessel_type, :vessel_type_other,
         :hull_material, :hull_material_other,
-        :loa_ft, :drive_type, :marina, :slip,
+        :loa_ft, :drive_type, :marina, :city, :slip,
         :svc_hull, :svc_anode, :svc_prop, :svc_rudder, :svc_other, :svc_other_detail,
         :frequency, :private_dock, :fouling_level, :fouling_other, :exp_service,
         :anode_required, :anode_material, :anode_material_other,
@@ -161,82 +164,76 @@ def save_estimate(form: dict, estimated_total: float | None = None) -> int:
         :prop_inst_required, :prop_type, :prop_type_other, :prop_diam,
         :paint_type, :paint_type_other, :paint_condition, :paint_condition_other,
         :notes, :referral,
-        :estimated_total
+        :estimated_total, :tax_rate
     )
     """
 
     params = {
         # contact
-        "first_name":           txt("first_name"),
-        "last_name":            txt("last_name"),
-        "email":                txt("email"),
-        "phone":                txt("phone"),
-
+        "first_name":            txt("first_name"),
+        "last_name":             txt("last_name"),
+        "email":                 txt("email"),
+        "phone":                 txt("phone"),
         # vessel
-        "vessel_name":          txt("vessel_name"),
-        "vessel_year":          txt("vessel_year"),
-        "vessel_make":          txt("vessel_make"),
-        "vessel_model":         txt("vessel_model"),
-        "vessel_type":          txt("vessel_type"),
-        "vessel_type_other":    txt("vesselType-other"),
-        "hull_material":        txt("hull_material"),
-        "hull_material_other":  txt("hullMat-other"),
-        "loa_ft":               num("loa_ft"),
-        "drive_type":           txt("drive_type"),
-        "marina":               txt("marina"),
-        "slip":                 txt("slip"),
-
+        "vessel_name":           txt("vessel_name"),
+        "vessel_year":           txt("vessel_year"),
+        "vessel_make":           txt("vessel_make"),
+        "vessel_model":          txt("vessel_model"),
+        "vessel_type":           txt("vessel_type"),
+        "vessel_type_other":     txt("vesselType-other"),
+        "hull_material":         txt("hull_material"),
+        "hull_material_other":   txt("hullMat-other"),
+        "loa_ft":                num("loa_ft"),
+        "drive_type":            txt("drive_type"),
+        "marina":                txt("marina"),
+        "city":                  txt("city"),
+        "slip":                  txt("slip"),
         # services
-        "svc_hull":             flag("svc_hull"),
-        "svc_anode":            flag("svc_anode"),
-        "svc_prop":             flag("svc_prop"),
-        "svc_rudder":           flag("svc_rudder"),
-        "svc_other":            flag("svc_other"),
-        "svc_other_detail":     txt("svc_other_detail"),
-        "frequency":            txt("frequency"),
-        "private_dock":         txt("privateDock"),
-        "fouling_level":        txt("fouling_level"),
-        "fouling_other":        txt("fouling_other"),
-        "exp_service":          txt("expService"),
-
+        "svc_hull":              flag("svc_hull"),
+        "svc_anode":             flag("svc_anode"),
+        "svc_prop":              flag("svc_prop"),
+        "svc_rudder":            flag("svc_rudder"),
+        "svc_other":             flag("svc_other"),
+        "svc_other_detail":      txt("svc_other_detail"),
+        "frequency":             txt("frequency"),
+        "private_dock":          txt("privateDock"),
+        "fouling_level":         txt("fouling_level"),
+        "fouling_other":         txt("fouling_other"),
+        "exp_service":           txt("expService"),
         # anode
-        "anode_required":       txt("anode_required"),
-        "anode_material":       txt("anode_material"),
-        "anode_material_other": txt("anode_material_other"),
-        "anode_loc_keel":       flag("anode_loc_keel"),
-        "qty_keel":             num("qty_keel"),
-        "anode_loc_shaft":      flag("anode_loc_shaft"),
-        "qty_shaft":            num("qty_shaft"),
-        "anode_loc_rudder":     flag("anode_loc_rudder"),
-        "qty_rudder":           num("qty_rudder"),
-        "anode_loc_other":      flag("anode_loc_other"),
-        "anode_location_other": txt("anode_location_other"),
-        "qty_other":            num("qty_other"),
-
+        "anode_required":        txt("anode_required"),
+        "anode_material":        txt("anode_material"),
+        "anode_material_other":  txt("anode_material_other"),
+        "anode_loc_keel":        flag("anode_loc_keel"),
+        "qty_keel":              num("qty_keel"),
+        "anode_loc_shaft":       flag("anode_loc_shaft"),
+        "qty_shaft":             num("qty_shaft"),
+        "anode_loc_rudder":      flag("anode_loc_rudder"),
+        "qty_rudder":            num("qty_rudder"),
+        "anode_loc_other":       flag("anode_loc_other"),
+        "anode_location_other":  txt("anode_location_other"),
+        "qty_other":             num("qty_other"),
         # prop
-        "prop_inst_required":   txt("prop_inst_required"),
-        "prop_type":            txt("propType"),
-        "prop_type_other":      txt("prop_other"),
-        "prop_diam":            num("propDiam"),
-
+        "prop_inst_required":    txt("prop_inst_required"),
+        "prop_type":             txt("propType"),
+        "prop_type_other":       txt("prop_other"),
+        "prop_diam":             num("propDiam"),
         # paint
-        "paint_type":           txt("paintType"),
-        "paint_type_other":     txt("paint-type-other"),
-        "paint_condition":      txt("paintCond"),
+        "paint_type":            txt("paintType"),
+        "paint_type_other":      txt("paint-type-other"),
+        "paint_condition":       txt("paintCond"),
         "paint_condition_other": txt("paintCond-other"),
-
         # misc
-        "notes":                txt("notes"),
-        "referral":             txt("referral"),
-
+        "notes":                 txt("notes"),
+        "referral":              txt("referral"),
         # financials
-        "estimated_total":      estimated_total,
+        "estimated_total":       estimated_total,
+        "tax_rate":              tax_rate,
     }
 
     with get_conn() as conn:
         cur = conn.execute(sql, params)
         new_id = cur.lastrowid
-        # Seed the status log with the initial 'new' entry
         conn.execute(
             """INSERT INTO request_status_log (request_id, old_status, new_status, changed_by)
                VALUES (?, NULL, 'new', 'system')""",
@@ -254,11 +251,6 @@ def update_status(
     changed_by: str = "staff",
     log_notes: str | None = None,
 ) -> None:
-    """
-    Move a request to a new status.
-    The DB trigger auto-logs the change, but we add changed_by / log_notes
-    by inserting into the log directly so the trigger row gets overwritten.
-    """
     if new_status not in VALID_STATUSES:
         raise ValueError(f"Invalid status '{new_status}'. Must be one of: {VALID_STATUSES}")
 
@@ -288,7 +280,6 @@ def update_status(
 
 # ── Read helpers ──────────────────────────────────────────────────────────────
 def get_request(request_id: int) -> sqlite3.Row | None:
-    """Return a single estimate_requests row or None."""
     with get_conn() as conn:
         return conn.execute(
             "SELECT * FROM estimate_requests WHERE id = ?", (request_id,)
@@ -296,7 +287,6 @@ def get_request(request_id: int) -> sqlite3.Row | None:
 
 
 def get_requests_by_status(status: str) -> list[sqlite3.Row]:
-    """Return all requests matching a given status, newest first."""
     with get_conn() as conn:
         return conn.execute(
             "SELECT * FROM estimate_requests WHERE status = ? ORDER BY created_at DESC",
@@ -305,7 +295,6 @@ def get_requests_by_status(status: str) -> list[sqlite3.Row]:
 
 
 def get_status_log(request_id: int) -> list[sqlite3.Row]:
-    """Return the full audit trail for a request, oldest first."""
     with get_conn() as conn:
         return conn.execute(
             "SELECT * FROM request_status_log WHERE request_id = ? ORDER BY changed_at ASC",
@@ -336,21 +325,30 @@ def set_deposit_paid(request_id: int, method: str = "unspecified") -> None:
 
 
 # ── Invoice helpers ───────────────────────────────────────────────────────────
-def compute_balance(final_invoice_total: float, amount_paid: float) -> float:
+def compute_balance(
+    final_invoice_total: float,
+    amount_paid: float,
+    tax_rate: float = DEFAULT_TAX_RATE,
+) -> float:
     """
-    Balance remaining after deposit credit and any payments made.
+    Balance remaining after deposit credit (with tax) and any additional payments.
 
-    final_invoice_total  — the full job cost (already includes mobilization fee)
-    amount_paid          — cash collected toward the final balance (not the deposit)
+    final_invoice_total  — pre-tax service total set by admin
+    amount_paid          — payments collected toward the final balance (not the deposit)
+    tax_rate             — applicable sales-tax rate in percent (e.g. 10.5)
 
-    The deposit is always credited automatically.
+    The mobilization fee was collected at booking *including tax*, so the
+    full tax-inclusive deposit is credited here automatically.
     """
-    return max(0.0, final_invoice_total - MOBILIZATION_FEE - amount_paid)
+    tax        = final_invoice_total * (tax_rate / 100.0)
+    grand      = final_invoice_total + tax
+    mob_credit = MOBILIZATION_FEE * (1.0 + tax_rate / 100.0)
+    return max(0.0, grand - mob_credit - amount_paid)
 
 
 def set_final_invoice_total(request_id: int, total: float) -> None:
     """
-    Set the confirmed final invoice total for a completed job.
+    Set the confirmed pre-tax final invoice total for a completed job.
     Call this before record_payment().
     """
     if total <= 0:
@@ -371,6 +369,51 @@ def set_final_invoice_total(request_id: int, total: float) -> None:
     logger.info("Final invoice total set to $%.2f for request id=%s", total, request_id)
 
 
+def set_anode_unit_price(request_id: int, price: float) -> None:
+    """
+    Set the per-anode material cost for a completed job.
+    Used to display the anode materials line item on the final invoice.
+    price may be 0 if the customer supplied their own anodes.
+    """
+    if price < 0:
+        raise ValueError("Anode unit price cannot be negative.")
+
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT id FROM estimate_requests WHERE id = ?", (request_id,)
+        ).fetchone()
+        if not row:
+            raise LookupError(f"Request id={request_id} not found.")
+
+        conn.execute(
+            "UPDATE estimate_requests SET anode_unit_price = ? WHERE id = ?",
+            (price, request_id),
+        )
+
+    logger.info("Anode unit price set to $%.2f for request id=%s", price, request_id)
+
+
+def set_invoice_notes(request_id: int, notes: str) -> None:
+    """
+    Set (or replace) the diver/admin notes shown on the final invoice.
+    Used to explain any scope changes, extra work performed, or conditions
+    encountered during service. Passing an empty string clears the field.
+    """
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT id FROM estimate_requests WHERE id = ?", (request_id,)
+        ).fetchone()
+        if not row:
+            raise LookupError(f"Request id={request_id} not found.")
+
+        conn.execute(
+            "UPDATE estimate_requests SET invoice_notes = ? WHERE id = ?",
+            (notes.strip() or None, request_id),
+        )
+
+    logger.info("Invoice notes updated for request id=%s", request_id)
+
+
 def record_payment(
     request_id: int,
     amount: float,
@@ -378,19 +421,13 @@ def record_payment(
     notes: str | None = None,
 ) -> dict:
     """
-    Record a payment (full or partial) against the final invoice.
+    Record a full or partial payment against the final (pre-tax) invoice.
 
-    - Adds `amount` to the running amount_paid total.
-    - Recomputes the balance and sets payment_status automatically:
-        unpaid       → no payment yet
-        partial      → payment received but balance remains
-        paid_in_full → balance is zero or below
-
-    Returns a dict with the updated figures:
+    Returns a dict with updated figures:
         {
             "request_id":   int,
             "amount_paid":  float,
-            "balance_due":  float,
+            "balance_due":  float,   # tax-inclusive balance
             "status":       str,
         }
     """
@@ -399,7 +436,7 @@ def record_payment(
 
     with get_conn() as conn:
         row = conn.execute(
-            """SELECT final_invoice_total, amount_paid
+            """SELECT final_invoice_total, amount_paid, tax_rate
                FROM estimate_requests WHERE id = ?""",
             (request_id,),
         ).fetchone()
@@ -413,8 +450,9 @@ def record_payment(
                 "Set the final invoice total before recording payment."
             )
 
+        tr              = row["tax_rate"] if row["tax_rate"] is not None else DEFAULT_TAX_RATE
         new_amount_paid = (row["amount_paid"] or 0.0) + amount
-        balance         = compute_balance(row["final_invoice_total"], new_amount_paid)
+        balance         = compute_balance(row["final_invoice_total"], new_amount_paid, tr)
 
         if balance <= 0:
             status = "paid_in_full"
@@ -448,15 +486,13 @@ def record_payment(
 
 
 def get_payment_summary(request_id: int) -> dict:
-    """
-    Return a full payment summary for a request — useful for
-    generating invoices or checking status.
-    """
+    """Return a full payment summary for a request."""
     with get_conn() as conn:
         row = conn.execute(
             """SELECT final_invoice_total, deposit_paid,
                       amount_paid, payment_status,
-                      payment_method, payment_date, payment_notes
+                      payment_method, payment_date, payment_notes,
+                      tax_rate
                FROM estimate_requests WHERE id = ?""",
             (request_id,),
         ).fetchone()
@@ -466,7 +502,8 @@ def get_payment_summary(request_id: int) -> dict:
 
     fit         = row["final_invoice_total"]
     amount_paid = row["amount_paid"] or 0.0
-    balance     = compute_balance(fit, amount_paid) if fit is not None else None
+    tr          = row["tax_rate"] if row["tax_rate"] is not None else DEFAULT_TAX_RATE
+    balance     = compute_balance(fit, amount_paid, tr) if fit is not None else None
 
     return {
         "request_id":           request_id,
@@ -478,31 +515,12 @@ def get_payment_summary(request_id: int) -> dict:
         "payment_method":       row["payment_method"],
         "payment_date":         row["payment_date"],
         "payment_notes":        row["payment_notes"],
+        "tax_rate":             tr,
     }
 
 
 # ── Stripe Checkout Session helpers ──────────────────────────────────────────
-# These functions belong at the bottom of database.py.
-# The two columns they rely on are added automatically by the migration
-# list below — append these entries to the existing _MIGRATIONS tuple in
-# database.py:
-#
-#     ("stripe_session_id",  "TEXT"),
-#     ("stripe_session_url", "TEXT"),
-
-
 def save_stripe_session(request_id: int, session_id: str, session_url: str) -> None:
-    """
-    Persist a Stripe Checkout Session ID and its hosted URL against a job.
-    Called immediately after creating the session so that page refreshes
-    can reuse the same Stripe URL instead of creating a new session.
-
-    Parameters
-    ----------
-    request_id  : int   — job row ID in estimate_requests
-    session_id  : str   — Stripe session id, e.g. "cs_live_..."
-    session_url : str   — Full hosted URL, e.g. "https://checkout.stripe.com/..."
-    """
     with get_conn() as conn:
         row = conn.execute(
             "SELECT id FROM estimate_requests WHERE id = ?", (request_id,)
@@ -525,10 +543,6 @@ def save_stripe_session(request_id: int, session_id: str, session_url: str) -> N
 
 
 def get_stripe_session(request_id: int) -> tuple[str | None, str | None]:
-    """
-    Return the cached (session_id, session_url) for a job, or (None, None)
-    if no session has been created yet.
-    """
     with get_conn() as conn:
         row = conn.execute(
             "SELECT stripe_session_id, stripe_session_url "
@@ -543,11 +557,6 @@ def get_stripe_session(request_id: int) -> tuple[str | None, str | None]:
 
 
 def clear_stripe_session(request_id: int) -> None:
-    """
-    Wipe the cached session so a fresh one will be created on the next
-    visit.  Call this from a Stripe webhook handler after a session
-    expires or is completed.
-    """
     with get_conn() as conn:
         conn.execute(
             "UPDATE estimate_requests "
