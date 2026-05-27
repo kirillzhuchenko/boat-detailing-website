@@ -345,7 +345,8 @@
 								<select name="anode_required" id="anode-rep" required>
 									<option value="">— Select —</option>
 									<option value="yes">Yes — supply &amp; install</option>
-									<option value="no">No — I have my own (labor only)</option>
+									<option value="own">Yes — I have my own (labor only)</option>
+									<option value="no">No — not required</option>
 								</select>
 							</div>
 
@@ -697,7 +698,7 @@
 
 			function updateAnodeVisibility() {
 				const val = anodeRepSel?.value || '';
-				if (val === 'yes' || val === 'no') {
+				if (val === 'yes' || val === 'own') {
 					anodeBlock.style.maxHeight = '60rem';
 					anodeBlock.style.opacity   = '1';
 					anodeBlock.style.marginBottom = '1.5rem';
@@ -796,7 +797,7 @@
 				// ── Anode — labor always, materials TBD when we supply ──
 				if (checked('svc-anode')) {
 					const anodeChoice = val('anode-rep');
-					if (anodeChoice === 'yes' || anodeChoice === 'no') {
+					if (anodeChoice === 'yes' || anodeChoice === 'own') {
 						const qty = intVal('qty-keel') + intVal('qty-shaft') + intVal('qty-rudder') + intVal('qty-other');
 						if (qty > 0) {
 							const labor = qty * RATES.anode_labor;
@@ -841,9 +842,9 @@
 					total += RATES.expedited;
 				}
 
-				// // ── Crew Mobilization Fee (always present) ───────────────
-				// lines.push({ label: 'Crew Mobilization Fee', amount: RATES.mobilization });
-				// total += RATES.mobilization;
+				// ── Crew Mobilization Fee (always present) ───────────────
+				lines.push({ label: 'Crew Mobilization Fee', amount: RATES.mobilization });
+				total += RATES.mobilization;
 
 				renderLines(lines, total);
 			}
