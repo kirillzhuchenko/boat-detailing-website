@@ -1,9 +1,9 @@
 import os
 import logging
 from flask import Flask, render_template, request, jsonify, abort
-from notifier import send_telegram_notification
-from service_notifier import send_telegram_service
-from database import (
+from src.backend.sys_notif.notifier import send_telegram_notification
+from src.backend.sys_notif.service_notifier import send_telegram_service
+from src.backend.database import (
     init_db, save_estimate, get_request, update_status,
     set_deposit_paid, record_payment,
     set_final_invoice_total, get_payment_summary,
@@ -32,11 +32,10 @@ with app.app_context():
     init_db()
 
 # ── Stripe imports ────────────────────────────────────────────────────────────
-import asyncio
 import stripe as stripe_lib
 from flask import redirect
 from stripe_payments import create_invoice_checkout_session
-from database import (
+from src.backend.database import (
     save_stripe_session, get_stripe_session, clear_stripe_session,
 )
 
@@ -1000,4 +999,5 @@ def mark_deposit_paid(request_id):
 
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.run(debug=True,
+            host="0.0.0.0",)

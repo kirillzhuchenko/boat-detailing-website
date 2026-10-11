@@ -16,7 +16,7 @@ from contextlib import contextmanager
 logger = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
-DB_PATH          = os.environ.get("DATABASE_URL", "instance/bluewater.db")
+DB_PATH          = os.environ.get("DATABASE_URL", "../../instance/bluewater.db")
 MOBILIZATION_FEE = 100.0    # keep in sync with app.py
 DEFAULT_TAX_RATE = 10.4     # fallback when city is not in the lookup table
 
