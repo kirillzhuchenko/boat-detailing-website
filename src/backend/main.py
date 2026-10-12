@@ -22,9 +22,16 @@ MOBILIZATION_FEE = 100.0    # keep in sync with database.py / stripe_payments.py
 logging.basicConfig(level=logging.ERROR, format="%(asctime)s | %(levelname)s | %(message)s")
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
+frontend_dir = os.path.join(os.getcwd(), "../frontend")
 
-GALLERY_FOLDER     = os.path.join(app.static_folder, "images", "gallery")
+app = Flask(__name__,
+            template_folder = os.path.join(frontend_dir, "templates"),
+            static_folder = os.path.join(frontend_dir, "static"),
+            )
+
+
+
+GALLERY_FOLDER = os.path.join(app.static_folder, "images", "gallery")
 ALLOWED_EXTENSIONS = {".jpg", ".png"}
 
 # ── DB init on startup ────────────────────────────────────────────────────────
