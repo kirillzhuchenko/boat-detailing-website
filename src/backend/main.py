@@ -1,8 +1,9 @@
 import os
-import logging
-from flask import Flask, render_template, request, jsonify, abort
-from src.backend.sys_notif.notifier import send_telegram_notification
-from src.backend.sys_notif.service_notifier import send_telegram_service
+from flask import (
+    Flask, render_template,
+    request, jsonify, abort)
+from sys_notif.notifier import send_telegram_notification
+from sys_notif.service_notifier import send_telegram_service
 from src.backend.database import (
     init_db, save_estimate, get_request, update_status,
     set_deposit_paid, record_payment,
@@ -12,15 +13,13 @@ from src.backend.database import (
 )
 from datetime import date
 from dotenv import load_dotenv
+from logger import logger
 
 load_dotenv()
 
 ADMIN_KEY        = os.environ.get("ADMIN_KEY", "changeme")
 MOBILIZATION_FEE = 100.0    # keep in sync with database.py / stripe_payments.py
 
-# ── Logging ───────────────────────────────────────────────────────────────────
-logging.basicConfig(level=logging.ERROR, format="%(asctime)s | %(levelname)s | %(message)s")
-logger = logging.getLogger(__name__)
 
 frontend_dir = os.path.join(os.getcwd(), "../frontend")
 
@@ -28,7 +27,6 @@ app = Flask(__name__,
             template_folder = os.path.join(frontend_dir, "templates"),
             static_folder = os.path.join(frontend_dir, "static"),
             )
-
 
 
 GALLERY_FOLDER = os.path.join(app.static_folder, "images", "gallery")
