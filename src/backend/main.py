@@ -1,7 +1,7 @@
 import os
 from flask import (
     Flask, render_template,
-    request, jsonify, abort)
+    request, jsonify, abort, redirect)
 from sys_notif.notifier import send_telegram_notification
 from sys_notif.service_notifier import send_telegram_service
 from src.backend.database import (
@@ -14,6 +14,13 @@ from src.backend.database import (
 from datetime import date
 from dotenv import load_dotenv
 from logger import logger
+
+# ── Stripe imports ────────────────────────────────────────────────────────────
+import stripe as stripe_lib
+from stripe_payments import create_invoice_checkout_session
+from src.backend.database import (
+    save_stripe_session, get_stripe_session, clear_stripe_session,
+)
 
 load_dotenv()
 
@@ -36,13 +43,6 @@ ALLOWED_EXTENSIONS = {".jpg", ".png"}
 with app.app_context():
     init_db()
 
-# ── Stripe imports ────────────────────────────────────────────────────────────
-import stripe as stripe_lib
-from flask import redirect
-from stripe_payments import create_invoice_checkout_session
-from src.backend.database import (
-    save_stripe_session, get_stripe_session, clear_stripe_session,
-)
 
 # ── Sales-tax lookup ──────────────────────────────────────────────────────────
 CITY_SALES_TAX: dict[str, float] = {
