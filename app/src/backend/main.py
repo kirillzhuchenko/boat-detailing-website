@@ -2,8 +2,8 @@ import os
 from flask import (
     Flask, render_template,
     request, jsonify, abort, redirect)
-from sys_notif.notifier import send_telegram_notification
-from sys_notif.service_notifier import send_telegram_service
+from app.src.backend.sys_notif.notifier import send_telegram_notification
+from app.src.backend.sys_notif.service_notifier import send_telegram_service
 from app.src.backend.database import (
     init_db, save_estimate, get_request, update_status,
     set_deposit_paid, record_payment,
@@ -21,6 +21,8 @@ from stripe_payments import create_invoice_checkout_session
 from app.src.backend.database import (
     save_stripe_session, get_stripe_session, clear_stripe_session,
 )
+
+import math
 
 load_dotenv()
 
@@ -840,6 +842,25 @@ def _check_admin(req):
     return req.form.get("key") == ADMIN_KEY
 
 
+_NON_FINITE = {"nan", "inf", "+inf", "-inf", "infinity", "+infinity", "-infinity"}
+
+def _parse_money(raw, field, *, allow_zero=True, max_value=1_000_000.0):
+    """Parse a user-supplied dollar amount; reject NaN/inf, negatives, and absurd values."""
+    raw = (raw or "0").strip()
+    if raw.lower() in _NON_FINITE:           # explicit guard (also satisfies Semgrep)
+        raise ValueError(f"{field} must be a valid number")
+    try:
+        value = float(raw)
+    except ValueError:
+        raise ValueError(f"{field} must be a valid number") from None
+    if not math.isfinite(value):             # catches any spelling the set missed
+        raise ValueError(f"{field} must be a valid number")
+    if value < 0 or (value == 0 and not allow_zero):
+        raise ValueError(f"{field} must be {'non-negative' if allow_zero else 'greater than zero'}")
+    if value > max_value:
+        raise ValueError(f"{field} is too large")
+    return round(value, 2)
+
 @app.route("/admin/request/<int:request_id>/status", methods=["POST"])
 def admin_update_status(request_id):
     if not _check_admin(request):
@@ -874,7 +895,7 @@ def admin_set_total(request_id):
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
-        total = float(request.form.get("total", 0))
+        total = _parse_money(request.form.get("total"), "total", allow_zero=False)
         req   = dict(get_request(request_id) or abort(404))
         set_final_invoice_total(request_id, total)
         _notify_invoice_total_set(req, total)
@@ -902,7 +923,7 @@ def admin_set_anode_price(request_id):
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
-        price = float(request.form.get("price", 0))
+        price = _parse_money(request.form.get("price"), "price")
         set_anode_unit_price(request_id, price)
         return jsonify({
             "status": "ok", "request_id": request_id,
@@ -949,7 +970,7 @@ def admin_record_payment(request_id):
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
-        amount = float(request.form.get("amount", 0))
+        amount = _parse_money(request.form.get("amount"), "amount", allow_zero=False)
         method = request.form.get("method", "unspecified")
         notes  = request.form.get("notes", "").strip() or None
         req    = dict(get_request(request_id) or abort(404))
@@ -1004,5 +1025,6 @@ def mark_deposit_paid(request_id):
 
 
 if __name__ == "__main__":
-    app.run(debug=True,
-            host="0.0.0.0",)
+    app.run(
+
+    )

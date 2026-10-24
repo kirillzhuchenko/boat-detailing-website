@@ -1,0 +1,8 @@
+# Docker
+### ModuleNotFoundError ###  ----- encountered ModuleNotFoundError: no module named 'src'. ---------The error occurs because PyCharm
+locally knows script root directory. Container doesn't have PyCharm installed. ----------FIX: append PYTHONPATH=/app to ENV PATH="/opt/venv/bin:$PATH" / PYTHONUNBUFFERED=1 /
+### FileNotFoundError ###  ------ encountered FileNotFoundError: [Errno 2] No such file or directory: 'schema.sql'. ------ Apparently
+the error occurred because schema.sql has not been created yet and python throws an error. -------FIX: 'potentially' Split into two
+separate images - app, d - and run with docker-compose
+### dockerfile.security.missing-user-entrypoint.missing-user-entrypoint ### ------semgrep caught that app is running as root. ----FIX:
+Creating a new user with RUN useradd appuser, changing ownership with RUN chown, and login as appuser with USER instruction.

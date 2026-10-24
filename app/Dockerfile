@@ -21,11 +21,23 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Use a brand-new, clean Python 3.12 image. Everything from Stage 1 is left behind except what has been copied over.
 FROM python:3.12-slim
 
+# Creating a new USER. From here an app belongs to this user
+RUN useradd --create-home appuser
+
 # Set /app as the default directory for this new final image.
 WORKDIR /app
 
 # Copy the fully populated virtual environment (with all installed packages) from the 'build' stage into this final image.
 COPY --from=build /opt/venv /opt/venv
+
+# Copy the rest of your application's source code from a local machine into the container's /app directory.
+COPY .. .
+
+# Setting appuser as the only owner of the WORKDIR
+RUN chown -R appuser:appuser /app
+
+# Login as an appuser
+USER appuser
 
 # Activate the copied virtual environment in this new stage by updating the PATH.
 # Also forces Python to send output directly to the terminal without holding it in a buffer (PYTHONUNBUFFERED=1), ensuring logs appear immediately in Docker.
@@ -33,12 +45,8 @@ ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app
 
-# Copy the rest of your application's source code from a local machine into the container's /app directory.
-COPY .. .
-
-
 # Execute the script  when the container is started.
-ENTRYPOINT ["python", "src/backend/main.py"]
+#ENTRYPOINT ["python", "app/src/backend/main.py"]
 
-#CMD ["cat", "/app/src/backend/main.py"]
+CMD ["ls", "-lha", "/app"]
 
