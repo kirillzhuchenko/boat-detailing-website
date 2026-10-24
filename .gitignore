@@ -1,3 +1,5 @@
 app/.env
 instance
 .idea
+.venv
+__pycache__

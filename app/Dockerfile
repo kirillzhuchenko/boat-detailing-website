@@ -16,25 +16,25 @@ COPY requirements.txt .
 # Install Python dependencies. The --no-cache-dir flag prevents pip from saving downloaded installation files, saving space.
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Stage 2: Runtime
 
+# Stage 2: Runtime
 # Use a brand-new, clean Python 3.12 image. Everything from Stage 1 is left behind except what has been copied over.
 FROM python:3.12-slim
 
 # Creating a new USER. From here an app belongs to this user
 RUN useradd --create-home appuser
 
-# Set /app as the default directory for this new final image.
+# Set /app as the default directory for this new final image. It belongs to root for now
 WORKDIR /app
 
 # Copy the fully populated virtual environment (with all installed packages) from the 'build' stage into this final image.
 COPY --from=build /opt/venv /opt/venv
 
 # Copy the rest of your application's source code from a local machine into the container's /app directory.
-COPY .. .
+COPY . .
 
 # Setting appuser as the only owner of the WORKDIR
-RUN chown -R appuser:appuser /app
+COPY --chown=appuser:appuser . .
 
 # Login as an appuser
 USER appuser
