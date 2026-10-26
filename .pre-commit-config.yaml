@@ -1,6 +1,17 @@
 repos:
+  # Static scanning with semgrep. Checking SQL injections, etc.
   - repo: https://github.com/semgrep/pre-commit
     rev: 'v1.169.0'
     hooks:
       - id: semgrep
         args: ['--config', 'auto', '--error', '--skip-unknown-extensions']
+
+  # Covers vulnerable dependencies, secrets and miscofigs
+  - repo: local
+    hooks:
+      - id: trivy-fs
+        name: trivy scan
+        entry: trivy fs --scanners vuln,secret,misconfig --severity HIGH,CRITICAL --ignore-unfixed --skip-files "**/.env" --exit-code 1 --quiet .
+        language: system
+        pass_filenames: false
+        always_run: true
