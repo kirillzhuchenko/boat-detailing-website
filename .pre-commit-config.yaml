@@ -1,12 +1,19 @@
 repos:
-  # Static scanning with semgrep. Checking SQL injections, etc.
+
+  # Gitleaks is used to scan sectets (passwords, API keys, tokens)
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.2
+    hooks:
+      - id: gitleaks
+
+  # Static scanning with semgrep. It checks bad code practices (SQL injections, missing input validation, etc)
   - repo: https://github.com/semgrep/pre-commit
     rev: 'v1.169.0'
     hooks:
       - id: semgrep
         args: ['--config', 'auto', '--error', '--skip-unknown-extensions']
 
-  # Covers vulnerable dependencies, secrets and miscofigs
+  # Covers vulnerable dependencies, secrets and misconfigs
   - repo: local
     hooks:
       - id: trivy-fs
