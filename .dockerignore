@@ -2,4 +2,4 @@
 instance
 __pycache__
 .venv
-Dockerfile
+app/src/Dockerfile

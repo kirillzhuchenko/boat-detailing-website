@@ -11,7 +11,7 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy local requirements.txt file into the container's /app directory.
-COPY requirements.txt .
+COPY ../requirements.txt .
 
 # Install Python dependencies. The --no-cache-dir flag prevents pip from saving downloaded installation files, saving space.
 RUN pip install --no-cache-dir -r requirements.txt
@@ -31,10 +31,10 @@ WORKDIR /app
 COPY --from=build /opt/venv /opt/venv
 
 # Copy the rest of your application's source code from a local machine into the container's /app directory.
-COPY . .
+COPY .. .
 
 # Setting appuser as the only owner of the WORKDIR
-COPY --chown=appuser:appuser . .
+COPY --chown=appuser:appuser .. .
 
 # Login as an appuser
 USER appuser
