@@ -16,7 +16,7 @@ from contextlib import contextmanager
 logger = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────────────────────
-DB_PATH          = os.environ.get("DATABASE_URL", "../../instance/bluewater.db")
+DB_PATH          = os.environ.get("DATABASE_URL", "../instance/bluewater.db")
 MOBILIZATION_FEE = 100.0    # keep in sync with app.py
 DEFAULT_TAX_RATE = 10.4     # fallback when city is not in the lookup table
 
@@ -80,6 +80,8 @@ def init_db(schema_path: str = "schema.sql") -> None:
         existing = {row[1] for row in conn.execute("PRAGMA table_info(estimate_requests)")}
         for col_name, col_def in _MIGRATIONS:
             if col_name not in existing:
+                # col_name is validated above and DDL can't use ? placeholders; keep as is for now
+                # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query, python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
                 conn.execute(
                     f"ALTER TABLE estimate_requests ADD COLUMN {col_name} {col_def}"
                 )

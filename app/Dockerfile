@@ -11,7 +11,7 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy local requirements.txt file into the container's /app directory.
-COPY ../requirements.txt .
+COPY requirements.txt .
 
 # Install Python dependencies. The --no-cache-dir flag prevents pip from saving downloaded installation files, saving space.
 RUN pip install --no-cache-dir -r requirements.txt
