@@ -568,3 +568,13 @@ def clear_stripe_session(request_id: int) -> None:
         )
 
     logger.info("Stripe session cleared for request id=%s", request_id)
+
+
+import asyncio
+
+async def main():
+    print('Async script started...')
+    await asyncio.Event().wait()
+
+if __name__ == '__main__':
+    asyncio.run(main())

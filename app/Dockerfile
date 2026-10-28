@@ -30,11 +30,8 @@ WORKDIR /app
 # Copy the fully populated virtual environment (with all installed packages) from the 'build' stage into this final image.
 COPY --from=build /opt/venv /opt/venv
 
-# Copy the rest of your application's source code from a local machine into the container's /app directory.
-COPY .. .
-
-# Setting appuser as the only owner of the WORKDIR
-COPY --chown=appuser:appuser .. .
+# Copy the rest of your application's source code from a local machine into the container's /app directory and changes the owner to appuser
+COPY --chown=appuser:appuser . .
 
 # Login as an appuser
 USER appuser

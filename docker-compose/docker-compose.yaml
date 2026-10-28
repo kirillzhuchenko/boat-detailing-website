@@ -1,1 +1,42 @@
+services:
+
+  web:
+    image: app
+    networks:
+      - frontend
+    volumes:
+      - db-data:/tmp/data
+    env_file:
+      - ../app/.env
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+
+  db:
+    image: db
+    volumes:
+      - db-data:/etc/data
+    networks:
+      - frontend
+    healthcheck:
+      test: ["CMD", "ls", "/app"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db-data:
+    name: "db-data"
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/kirill/python-scripts/boat-detailing-website/instance
+
+
+networks:
+  frontend:
+    driver: bridge
+
 

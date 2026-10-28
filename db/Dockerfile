@@ -1,5 +1,4 @@
-FROM ubuntu:latest
-LABEL authors="kirill"
+FROM python:3.12-slim
 
 
 
@@ -7,8 +6,8 @@ RUN useradd --create-home dbuser
 
 WORKDIR /app
 
-COPY --chown=appuser:appuser . .
+COPY --chown=dbuser:dbuser . .
 
 USER dbuser
 
-ENTRYPOINT ["top", "-b"]
+ENTRYPOINT ["python", "database.py"]
