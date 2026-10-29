@@ -4,4 +4,4 @@ instance
 .venv
 __pycache__
 .git
-src/backend/__pycache__
+src/backend/__pycache__/

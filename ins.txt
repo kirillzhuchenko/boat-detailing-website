@@ -7,4 +7,3 @@ separate images - app, d - and run with docker-compose
 ### dockerfile.security.missing-user-entrypoint.missing-user-entrypoint ### ------semgrep caught that app is running as root. ----FIX:
 Creating a new user with RUN useradd appuser, changing ownership with RUN chown, and login as appuser with USER instruction.
 ### Relevant path to schema.sql inside a container doesn't work. ### ------FIX: Use os.path.dirname
-### PermissionError: [Errno 13] Permission denied: ### ---------Encountered upon creation on instance/database.py -------FIX:

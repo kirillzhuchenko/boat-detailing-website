@@ -1,28 +1,34 @@
 """
-database.py — SQLite helper for Bluewater Detailing
-----------------------------------------------------
+database.py — PostgreSQL helper for Bluewater Detailing
+--------------------------------------------------------
 Usage:
     from database import init_db, save_estimate, update_status, get_request
 
+Requires:
+    pip install "psycopg[binary]"
+
 Environment variable:
-    DATABASE_URL  path to the .db file  (default: instance/bluewater.db)
+    DATABASE_URL  PostgreSQL connection string
+                  (default: postgresql://localhost/bluewater)
+                  e.g.  postgresql://user:password@host:5432/bluewater
 """
 
 import os
-import sqlite3
 import logging
 from contextlib import contextmanager
+from dotenv import load_dotenv
+
+load_dotenv()
+
+import psycopg
+from psycopg import sql
+from psycopg.adapt import Loader
+from psycopg.rows import dict_row
 
 logger = logging.getLogger(__name__)
 
-# ── Schema path ────────────────────────────────────────────────────────────────────
-# Get the directory where database.py actually lives
-current_dir = os.path.dirname(os.path.abspath(__file__))
-# Construct an absolute path to schema.sql in the same folder
-default_schema_path = os.path.join(current_dir, "schema.sql")
-
 # ── Config ────────────────────────────────────────────────────────────────────
-DB_PATH          = os.environ.get("DATABASE_URL", "../../../instance/bluewater.db")
+DB_URL           = os.environ.get("DATABASE_URL", )
 MOBILIZATION_FEE = 100.0    # keep in sync with app.py
 DEFAULT_TAX_RATE = 10.4     # fallback when city is not in the lookup table
 
@@ -31,36 +37,52 @@ VALID_STATUSES = {
     "in_progress", "completed", "invoiced", "cancelled",
 }
 
+# Arbitrary constant used so only one process runs init_db at a time
+# (e.g. several gunicorn workers starting together).
+_INIT_LOCK_ID = 727274
+
 # ── Columns that may not exist on older databases ─────────────────────────────
 _MIGRATIONS = [
     ("deposit_paid",            "INTEGER NOT NULL DEFAULT 0"),
-    ("deposit_paid_at",         "DATETIME"),
+    ("deposit_paid_at",         "TIMESTAMPTZ"),
     ("deposit_payment_method",  "TEXT"),
-    ("final_invoice_total",     "REAL"),
-    ("amount_paid",             "REAL NOT NULL DEFAULT 0"),
+    ("final_invoice_total",     "NUMERIC(12,2)"),
+    ("amount_paid",             "NUMERIC(12,2) NOT NULL DEFAULT 0"),
     ("payment_status",          "TEXT NOT NULL DEFAULT 'unpaid'"),
     ("payment_method",          "TEXT"),
-    ("payment_date",            "DATETIME"),
+    ("payment_date",            "TIMESTAMPTZ"),
     ("payment_notes",           "TEXT"),
     ("stripe_session_id",       "TEXT"),
     ("stripe_session_url",      "TEXT"),
     # ── new columns ──
     ("city",                    "TEXT"),
-    ("anode_unit_price",        "REAL"),
-    ("tax_rate",                "REAL NOT NULL DEFAULT 10.4"),
+    ("anode_unit_price",        "NUMERIC(12,2)"),
+    ("tax_rate",                "NUMERIC(5,2) NOT NULL DEFAULT 10.4"),
     ("invoice_notes",           "TEXT"),
 ]
+
+# Get the directory where database.py actually lives
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# Construct an absolute path to schema.sql in the same folder
+default_schema_path = os.path.join(current_dir, "schema.sql")
+
+# ── NUMERIC → float ───────────────────────────────────────────────────────────
+# psycopg returns NUMERIC as decimal.Decimal, which can't be mixed with floats
+# (compute_balance etc.) or JSON-serialised by Flask. Load them as float instead,
+# matching the old SQLite REAL behaviour.
+class _NumericAsFloat(Loader):
+    def load(self, data):
+        return float(bytes(data))
+
+
+psycopg.adapters.register_loader("numeric", _NumericAsFloat)
 
 
 # ── Connection helper ─────────────────────────────────────────────────────────
 @contextmanager
 def get_conn():
-    """Yield a connection with Row factory and FK enforcement, auto-commit/rollback."""
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    conn.execute("PRAGMA journal_mode = WAL")
+    """Yield a connection with dict rows, auto-commit/rollback."""
+    conn = psycopg.connect(DB_URL, row_factory=dict_row)
     try:
         yield conn
         conn.commit()
@@ -74,27 +96,40 @@ def get_conn():
 # ── Schema init ───────────────────────────────────────────────────────────────
 def init_db(schema_path: str = default_schema_path) -> None:
     """
-    1. Create tables from schema.sql if they don't exist.
+    1. Create tables from the schema file if they don't exist.
     2. Apply any column migrations that are missing from an older DB.
     Safe to call on every startup.
     """
     with open(schema_path, "r") as f:
-        sql = f.read()
+        schema_sql = f.read()
 
     with get_conn() as conn:
-        conn.executescript(sql)
-        existing = {row[1] for row in conn.execute("PRAGMA table_info(estimate_requests)")}
+        # Serialise concurrent startups; released automatically at commit.
+        conn.execute("SELECT pg_advisory_xact_lock(%s)", (_INIT_LOCK_ID,))
+        conn.execute(schema_sql)
+
+        existing = {
+            row["column_name"]
+            for row in conn.execute(
+                """SELECT column_name FROM information_schema.columns
+                   WHERE table_schema = current_schema()
+                     AND table_name = 'estimate_requests'"""
+            )
+        }
         for col_name, col_def in _MIGRATIONS:
             if col_name not in existing:
-                # col_name is validated above and DDL can't use ? placeholders; keep as is for now
-                # nosemgrep: python.lang.security.audit.formatted-sql-query.formatted-sql-query, python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
-                conn.execute(
-                    f"ALTER TABLE estimate_requests ADD COLUMN {col_name} {col_def}"
-                )
+                # Safe: both values come from the hardcoded _MIGRATIONS list (never user
+                # input), and the column name is quoted with sql.Identifier.
+                stmt = sql.SQL(
+                    "ALTER TABLE estimate_requests ADD COLUMN IF NOT EXISTS {} {}"
+                ).format(sql.Identifier(col_name), sql.SQL(col_def))
+                # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
+                conn.execute(stmt)  # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
                 logger.info("Migration: added column '%s' to estimate_requests", col_name)
 
-    logger.info("Database initialised at %s", DB_PATH)
+    logger.info("Database initialised")
 
+init_db()
 # ── Save a new estimate request ───────────────────────────────────────────────
 def save_estimate(
     form: dict,
@@ -122,7 +157,7 @@ def save_estimate(
         except (ValueError, TypeError):
             return None
 
-    sql = """
+    query = """
     INSERT INTO estimate_requests (
         -- contact
         first_name, last_name, email, phone,
@@ -156,23 +191,24 @@ def save_estimate(
         -- financials
         estimated_total, tax_rate
     ) VALUES (
-        :first_name, :last_name, :email, :phone,
-        :vessel_name, :vessel_year, :vessel_make, :vessel_model,
-        :vessel_type, :vessel_type_other,
-        :hull_material, :hull_material_other,
-        :loa_ft, :drive_type, :marina, :city, :slip,
-        :svc_hull, :svc_anode, :svc_prop, :svc_rudder, :svc_other, :svc_other_detail,
-        :frequency, :private_dock, :fouling_level, :fouling_other, :exp_service,
-        :anode_required, :anode_material, :anode_material_other,
-        :anode_loc_keel, :qty_keel,
-        :anode_loc_shaft, :qty_shaft,
-        :anode_loc_rudder, :qty_rudder,
-        :anode_loc_other, :anode_location_other, :qty_other,
-        :prop_inst_required, :prop_type, :prop_type_other, :prop_diam,
-        :paint_type, :paint_type_other, :paint_condition, :paint_condition_other,
-        :notes, :referral,
-        :estimated_total, :tax_rate
+        %(first_name)s, %(last_name)s, %(email)s, %(phone)s,
+        %(vessel_name)s, %(vessel_year)s, %(vessel_make)s, %(vessel_model)s,
+        %(vessel_type)s, %(vessel_type_other)s,
+        %(hull_material)s, %(hull_material_other)s,
+        %(loa_ft)s, %(drive_type)s, %(marina)s, %(city)s, %(slip)s,
+        %(svc_hull)s, %(svc_anode)s, %(svc_prop)s, %(svc_rudder)s, %(svc_other)s, %(svc_other_detail)s,
+        %(frequency)s, %(private_dock)s, %(fouling_level)s, %(fouling_other)s, %(exp_service)s,
+        %(anode_required)s, %(anode_material)s, %(anode_material_other)s,
+        %(anode_loc_keel)s, %(qty_keel)s,
+        %(anode_loc_shaft)s, %(qty_shaft)s,
+        %(anode_loc_rudder)s, %(qty_rudder)s,
+        %(anode_loc_other)s, %(anode_location_other)s, %(qty_other)s,
+        %(prop_inst_required)s, %(prop_type)s, %(prop_type_other)s, %(prop_diam)s,
+        %(paint_type)s, %(paint_type_other)s, %(paint_condition)s, %(paint_condition_other)s,
+        %(notes)s, %(referral)s,
+        %(estimated_total)s, %(tax_rate)s
     )
+    RETURNING id
     """
 
     params = {
@@ -239,11 +275,10 @@ def save_estimate(
     }
 
     with get_conn() as conn:
-        cur = conn.execute(sql, params)
-        new_id = cur.lastrowid
+        new_id = conn.execute(query, params).fetchone()["id"]
         conn.execute(
             """INSERT INTO request_status_log (request_id, old_status, new_status, changed_by)
-               VALUES (?, NULL, 'new', 'system')""",
+               VALUES (%s, NULL, 'new', 'system')""",
             (new_id,),
         )
 
@@ -263,20 +298,20 @@ def update_status(
 
     with get_conn() as conn:
         row = conn.execute(
-            "SELECT status FROM estimate_requests WHERE id = ?", (request_id,)
+            "SELECT status FROM estimate_requests WHERE id = %s", (request_id,)
         ).fetchone()
         if not row:
             raise LookupError(f"Request id={request_id} not found.")
 
         old_status = row["status"]
         conn.execute(
-            "UPDATE estimate_requests SET status = ?, status_notes = ? WHERE id = ?",
+            "UPDATE estimate_requests SET status = %s, status_notes = %s WHERE id = %s",
             (new_status, log_notes, request_id),
         )
         conn.execute(
             """INSERT INTO request_status_log
                (request_id, old_status, new_status, changed_by, log_notes)
-               VALUES (?, ?, ?, ?, ?)""",
+               VALUES (%s, %s, %s, %s, %s)""",
             (request_id, old_status, new_status, changed_by, log_notes),
         )
 
@@ -286,25 +321,25 @@ def update_status(
 
 
 # ── Read helpers ──────────────────────────────────────────────────────────────
-def get_request(request_id: int) -> sqlite3.Row | None:
+def get_request(request_id: int) -> dict | None:
     with get_conn() as conn:
         return conn.execute(
-            "SELECT * FROM estimate_requests WHERE id = ?", (request_id,)
+            "SELECT * FROM estimate_requests WHERE id = %s", (request_id,)
         ).fetchone()
 
 
-def get_requests_by_status(status: str) -> list[sqlite3.Row]:
+def get_requests_by_status(status: str) -> list[dict]:
     with get_conn() as conn:
         return conn.execute(
-            "SELECT * FROM estimate_requests WHERE status = ? ORDER BY created_at DESC",
+            "SELECT * FROM estimate_requests WHERE status = %s ORDER BY created_at DESC",
             (status,),
         ).fetchall()
 
 
-def get_status_log(request_id: int) -> list[sqlite3.Row]:
+def get_status_log(request_id: int) -> list[dict]:
     with get_conn() as conn:
         return conn.execute(
-            "SELECT * FROM request_status_log WHERE request_id = ? ORDER BY changed_at ASC",
+            "SELECT * FROM request_status_log WHERE request_id = %s ORDER BY changed_at ASC",
             (request_id,),
         ).fetchall()
 
@@ -314,7 +349,7 @@ def set_deposit_paid(request_id: int, method: str = "unspecified") -> None:
     """Mark the mobilization fee as collected."""
     with get_conn() as conn:
         row = conn.execute(
-            "SELECT deposit_paid FROM estimate_requests WHERE id = ?",
+            "SELECT deposit_paid FROM estimate_requests WHERE id = %s",
             (request_id,)
         ).fetchone()
         if not row:
@@ -323,9 +358,9 @@ def set_deposit_paid(request_id: int, method: str = "unspecified") -> None:
         conn.execute(
             """UPDATE estimate_requests
                SET deposit_paid = 1,
-                   deposit_paid_at = datetime('now'),
-                   deposit_payment_method = ?
-               WHERE id = ?""",
+                   deposit_paid_at = now(),
+                   deposit_payment_method = %s
+               WHERE id = %s""",
             (method, request_id)
         )
     logger.info("Deposit marked paid for request id=%s via %s", request_id, method)
@@ -363,13 +398,13 @@ def set_final_invoice_total(request_id: int, total: float) -> None:
 
     with get_conn() as conn:
         row = conn.execute(
-            "SELECT id FROM estimate_requests WHERE id = ?", (request_id,)
+            "SELECT id FROM estimate_requests WHERE id = %s", (request_id,)
         ).fetchone()
         if not row:
             raise LookupError(f"Request id={request_id} not found.")
 
         conn.execute(
-            "UPDATE estimate_requests SET final_invoice_total = ? WHERE id = ?",
+            "UPDATE estimate_requests SET final_invoice_total = %s WHERE id = %s",
             (total, request_id),
         )
 
@@ -387,13 +422,13 @@ def set_anode_unit_price(request_id: int, price: float) -> None:
 
     with get_conn() as conn:
         row = conn.execute(
-            "SELECT id FROM estimate_requests WHERE id = ?", (request_id,)
+            "SELECT id FROM estimate_requests WHERE id = %s", (request_id,)
         ).fetchone()
         if not row:
             raise LookupError(f"Request id={request_id} not found.")
 
         conn.execute(
-            "UPDATE estimate_requests SET anode_unit_price = ? WHERE id = ?",
+            "UPDATE estimate_requests SET anode_unit_price = %s WHERE id = %s",
             (price, request_id),
         )
 
@@ -408,13 +443,13 @@ def set_invoice_notes(request_id: int, notes: str) -> None:
     """
     with get_conn() as conn:
         row = conn.execute(
-            "SELECT id FROM estimate_requests WHERE id = ?", (request_id,)
+            "SELECT id FROM estimate_requests WHERE id = %s", (request_id,)
         ).fetchone()
         if not row:
             raise LookupError(f"Request id={request_id} not found.")
 
         conn.execute(
-            "UPDATE estimate_requests SET invoice_notes = ? WHERE id = ?",
+            "UPDATE estimate_requests SET invoice_notes = %s WHERE id = %s",
             (notes.strip() or None, request_id),
         )
 
@@ -442,9 +477,11 @@ def record_payment(
         raise ValueError("Payment amount must be greater than zero.")
 
     with get_conn() as conn:
+        # FOR UPDATE locks the row so two simultaneous payments can't
+        # both read the same amount_paid and overwrite each other.
         row = conn.execute(
             """SELECT final_invoice_total, amount_paid, tax_rate
-               FROM estimate_requests WHERE id = ?""",
+               FROM estimate_requests WHERE id = %s FOR UPDATE""",
             (request_id,),
         ).fetchone()
 
@@ -470,12 +507,12 @@ def record_payment(
 
         conn.execute(
             """UPDATE estimate_requests
-               SET amount_paid    = ?,
-                   payment_status = ?,
-                   payment_method = ?,
-                   payment_date   = datetime('now'),
-                   payment_notes  = ?
-               WHERE id = ?""",
+               SET amount_paid    = %s,
+                   payment_status = %s,
+                   payment_method = %s,
+                   payment_date   = now(),
+                   payment_notes  = %s
+               WHERE id = %s""",
             (new_amount_paid, status, method, notes, request_id),
         )
 
@@ -500,7 +537,7 @@ def get_payment_summary(request_id: int) -> dict:
                       amount_paid, payment_status,
                       payment_method, payment_date, payment_notes,
                       tax_rate
-               FROM estimate_requests WHERE id = ?""",
+               FROM estimate_requests WHERE id = %s""",
             (request_id,),
         ).fetchone()
 
@@ -530,16 +567,16 @@ def get_payment_summary(request_id: int) -> dict:
 def save_stripe_session(request_id: int, session_id: str, session_url: str) -> None:
     with get_conn() as conn:
         row = conn.execute(
-            "SELECT id FROM estimate_requests WHERE id = ?", (request_id,)
+            "SELECT id FROM estimate_requests WHERE id = %s", (request_id,)
         ).fetchone()
         if not row:
             raise LookupError(f"Request id={request_id} not found.")
 
         conn.execute(
             """UPDATE estimate_requests
-               SET stripe_session_id  = ?,
-                   stripe_session_url = ?
-               WHERE id = ?""",
+               SET stripe_session_id  = %s,
+                   stripe_session_url = %s
+               WHERE id = %s""",
             (session_id, session_url, request_id),
         )
 
@@ -550,28 +587,17 @@ def save_stripe_session(request_id: int, session_id: str, session_url: str) -> N
 
 
 def get_stripe_session(request_id: int) -> tuple[str | None, str | None]:
+    # NOTE: the uploaded file was cut off at this function; this body is a
+    # reconstruction. Compare it with your original and adjust if needed.
     with get_conn() as conn:
         row = conn.execute(
-            "SELECT stripe_session_id, stripe_session_url "
-            "FROM estimate_requests WHERE id = ?",
+            """SELECT stripe_session_id, stripe_session_url
+               FROM estimate_requests WHERE id = %s""",
             (request_id,),
         ).fetchone()
 
     if not row:
-        raise LookupError(f"Request id={request_id} not found.")
-
+        return None, None
     return row["stripe_session_id"], row["stripe_session_url"]
-
-
-def clear_stripe_session(request_id: int) -> None:
-    with get_conn() as conn:
-        conn.execute(
-            "UPDATE estimate_requests "
-            "SET stripe_session_id = NULL, stripe_session_url = NULL "
-            "WHERE id = ?",
-            (request_id,),
-        )
-
-    logger.info("Stripe session cleared for request id=%s", request_id)
 
 init_db()
