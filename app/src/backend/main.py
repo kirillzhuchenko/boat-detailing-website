@@ -4,7 +4,7 @@ from flask import (
     request, jsonify, abort, redirect)
 from app.src.backend.sys_notif.notifier import send_telegram_notification
 from app.src.backend.sys_notif.service_notifier import send_telegram_service
-from db.database import (
+from app.src.db.database import (
     init_db, save_estimate, get_request, update_status,
     set_deposit_paid, record_payment,
     set_final_invoice_total, get_payment_summary,
@@ -18,7 +18,7 @@ from logger import logger
 # ── Stripe imports ────────────────────────────────────────────────────────────
 import stripe as stripe_lib
 from stripe_payments import create_invoice_checkout_session
-from db.database import (
+from app.src.db.database import (
     save_stripe_session, get_stripe_session, clear_stripe_session,
 )
 

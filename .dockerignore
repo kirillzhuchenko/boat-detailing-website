@@ -3,5 +3,5 @@ instance
 __pycache__
 .venv
 app/Dockerfile
-db/Dockerfile
 .git
+src/backend/__pycache__

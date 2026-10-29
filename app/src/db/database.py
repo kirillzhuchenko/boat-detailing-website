@@ -15,8 +15,14 @@ from contextlib import contextmanager
 
 logger = logging.getLogger(__name__)
 
+# ── Schema path ────────────────────────────────────────────────────────────────────
+# Get the directory where database.py actually lives
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# Construct an absolute path to schema.sql in the same folder
+default_schema_path = os.path.join(current_dir, "schema.sql")
+
 # ── Config ────────────────────────────────────────────────────────────────────
-DB_PATH          = os.environ.get("DATABASE_URL", "../instance/bluewater.db")
+DB_PATH          = os.environ.get("DATABASE_URL", "../../../instance/bluewater.db")
 MOBILIZATION_FEE = 100.0    # keep in sync with app.py
 DEFAULT_TAX_RATE = 10.4     # fallback when city is not in the lookup table
 
@@ -66,7 +72,7 @@ def get_conn():
 
 
 # ── Schema init ───────────────────────────────────────────────────────────────
-def init_db(schema_path: str = "schema.sql") -> None:
+def init_db(schema_path: str = default_schema_path) -> None:
     """
     1. Create tables from schema.sql if they don't exist.
     2. Apply any column migrations that are missing from an older DB.
@@ -88,7 +94,6 @@ def init_db(schema_path: str = "schema.sql") -> None:
                 logger.info("Migration: added column '%s' to estimate_requests", col_name)
 
     logger.info("Database initialised at %s", DB_PATH)
-
 
 # ── Save a new estimate request ───────────────────────────────────────────────
 def save_estimate(
@@ -569,12 +574,4 @@ def clear_stripe_session(request_id: int) -> None:
 
     logger.info("Stripe session cleared for request id=%s", request_id)
 
-
-import asyncio
-
-async def main():
-    print('Async script started...')
-    await asyncio.Event().wait()
-
-if __name__ == '__main__':
-    asyncio.run(main())
+init_db()
