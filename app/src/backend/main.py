@@ -31,17 +31,17 @@ ADMIN_KEY        = os.environ.get("ADMIN_KEY", "changeme")
 MOBILIZATION_FEE = 100.0    # keep in sync with database.py / stripe_payments.py
 
 
-frontend_dir = os.path.join(os.getcwd(), "../frontend")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))   # /app/src/backend
+frontend_dir = os.path.abspath(os.path.join(BASE_DIR, "..", "frontend"))  # /app/src/frontend
 
 app = Flask(__name__,
-            template_folder = os.path.join(frontend_dir, "templates"),
-            static_folder = os.path.join(frontend_dir, "static"),
+            template_folder=os.path.join(frontend_dir, "templates"),
+            static_folder=os.path.join(frontend_dir, "static"),
             )
-
 
 GALLERY_FOLDER = os.path.join(app.static_folder, "images", "gallery")
 ALLOWED_EXTENSIONS = {".jpg", ".png"}
-
+print(GALLERY_FOLDER)
 # ── DB init on startup ────────────────────────────────────────────────────────
 with app.app_context():
     init_db()
@@ -1027,5 +1027,6 @@ def mark_deposit_paid(request_id):
 
 if __name__ == "__main__":
     app.run(
-
+        port=5000,
+        host=os.environ.get("FLASK_HOST", "127.0.0.1"),
     )

@@ -5,9 +5,11 @@ services:
     networks:
       - frontend
     volumes:
-      - db-data:/tmp/data
+      - static-data:/app/src/frontend/static/images
     env_file:
       - ../app/.env
+    ports:
+      - "127.0.0.1:5000:5000"
     depends_on:
       db:
         condition: service_healthy
@@ -37,6 +39,13 @@ volumes:
       type: none
       o: bind
       device: /home/kirill/python-scripts/boat-detailing-website/instance
+
+  static-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/kirill/python-scripts/boat-detailing-website/app/src/frontend/static/images
 
 
 networks:
