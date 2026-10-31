@@ -5,3 +5,4 @@ instance
 __pycache__
 .git
 src/backend/__pycache__/
+docker-compose/.env

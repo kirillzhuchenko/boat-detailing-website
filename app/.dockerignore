@@ -6,3 +6,4 @@ app/Dockerfile
 .git
 src/backend/__pycache__
 frontend/static/images
+Dockerfile

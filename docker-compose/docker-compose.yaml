@@ -7,9 +7,9 @@ services:
     volumes:
       - static-data:/app/src/frontend/static/images
     env_file:
-      - ../app/.env
+      - .env
     ports:
-      - "127.0.0.1:5000:5000"
+      - ${APP_PORT}
     depends_on:
       db:
         condition: service_healthy
@@ -18,11 +18,11 @@ services:
   db:
     image: postgres:16
     volumes:
-      - db-data:/etc/data
+      - db-data:/app/instance
     expose:
       - 5432/tcp
     env_file:
-      - ../app/.env
+      - .env
     networks:
       - frontend
     healthcheck:
@@ -45,7 +45,7 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: /home/kirill/python-scripts/boat-detailing-website/app/src/frontend/static/images
+      device: ${STATIC_FOLDER}
 
 
 networks:
