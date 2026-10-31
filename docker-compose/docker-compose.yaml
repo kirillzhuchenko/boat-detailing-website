@@ -17,6 +17,8 @@ services:
       retries: 5
     depends_on:
       - web
+      - web1
+      - web2
 
 
   web:
@@ -34,6 +36,39 @@ services:
       db:
         condition: service_healthy
         restart: true
+
+  web1:
+    image: app
+    networks:
+      - frontend
+      - backend
+    volumes:
+      - static-data:/app/src/frontend/static/images:ro
+    env_file:
+      - .env
+    expose:
+      - 5001
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+
+  web2:
+    image: app
+    networks:
+      - frontend
+      - backend
+    volumes:
+      - static-data:/app/src/frontend/static/images:ro
+    env_file:
+      - .env
+    expose:
+      - 5002
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+
 
   db:
     image: postgres:16
