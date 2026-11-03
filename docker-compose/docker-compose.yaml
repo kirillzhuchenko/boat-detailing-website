@@ -41,12 +41,13 @@ services:
         condition: on-failure
         delay: 5s
         max_attempts: 3
+        window: 60s
 
 
   db:
     image: postgres:16
     volumes:
-      - db-data:/app/instance
+      - db-data:/app/instance:ro
     expose:
       - 5432/tcp
     env_file:
