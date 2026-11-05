@@ -42,7 +42,10 @@ services:
         delay: 5s
         max_attempts: 3
         window: 60s
-
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 512M
 
   db:
     image: postgres:16
