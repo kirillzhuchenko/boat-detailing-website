@@ -1,8 +1,14 @@
 name: main.py CI
 
 on:
-  - push
-  - pull_request
+  pull_request:
+    branches:
+      - dev
+
+
+#permissions:
+#  contents: read
+#  packages: write
 
 jobs:
   build:

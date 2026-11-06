@@ -17,7 +17,7 @@ from logger import logger
 
 # ── Stripe imports ────────────────────────────────────────────────────────────
 import stripe as stripe_lib
-from stripe_payments import create_invoice_checkout_session
+from src.backend.stripe_payments import create_invoice_checkout_session
 from src.db.database import (
     save_stripe_session, get_stripe_session,
     # clear_stripe_session,
