@@ -31,7 +31,7 @@ WORKDIR /app
 COPY --from=build /opt/venv /opt/venv
 
 # Copy the rest of your application's source code from a local machine into the container's /app directory and changes the owner to appuser
-COPY --chown=appuser:appuser . .
+COPY --chown=appuser:appuser .. .
 
 # Login as an appuser
 USER appuser
@@ -43,7 +43,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONPATH=/app
 
 # Execute the script  when the container is started.
-#ENTRYPOINT ["python", "app/src/backend/main.py"]
+ENTRYPOINT ["sh", "-c", "python src/db/database.py && python src/backend/main.py"]
 
-CMD ["ls", "-lha", "/app"]
+#CMD ["ls", "src"]
 

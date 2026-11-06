@@ -1,26 +1,64 @@
 services:
 
+  nginx:
+    image: nginx:1.31.8
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - frontend
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+#      - ./nginx-certs:/etc/nginx/certs:ro  # can't use it because it has to be signed by an authority organization, ps ass listen 443 ssl and ssl_cert/key to nginx.conf file
+#      - static-data:/usr/share/nginx/static:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsS http://localhost/ || exit 1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      - web
+
+
   web:
     image: app
     networks:
       - frontend
+      - backend
     volumes:
-      - db-data:/tmp/data
+      - static-data:/app/src/frontend/static/images:ro
     env_file:
-      - ../app/.env
+      - .env
+    expose:
+      - ${APP_PORT}
     depends_on:
       db:
         condition: service_healthy
         restart: true
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 60s
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 512M
 
   db:
-    image: db
+    image: postgres:16
     volumes:
-      - db-data:/etc/data
+      - db-data:/app/instance:ro
+    expose:
+      - 5432/tcp
+    env_file:
+      - .env
     networks:
-      - frontend
+      - backend
     healthcheck:
-      test: ["CMD", "ls", "/app"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -34,9 +72,18 @@ volumes:
       o: bind
       device: /home/kirill/python-scripts/boat-detailing-website/instance
 
+  static-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${STATIC_FOLDER}
+
 
 networks:
   frontend:
+    driver: bridge
+  backend:
     driver: bridge
 
 

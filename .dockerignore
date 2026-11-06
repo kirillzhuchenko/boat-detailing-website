@@ -1,7 +1,0 @@
-../.env
-instance
-__pycache__
-.venv
-app/Dockerfile
-db/Dockerfile
-.git
