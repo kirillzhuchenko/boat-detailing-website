@@ -23,12 +23,23 @@ jobs:
             pyproject.toml
           prune-cache: true
 
-      #      - name: Setup python
-#        uses: actions/setup-python@ff73b2463e2f3baa703f830da214b8dfeeaeccf8
-#        run: install python
-
-
       - run: uv sync --locked
 
       - run: uv run pip-audit
 
+# Think if pylint may be a better choice for deeper search
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Install ruff
+        uses: astral-sh/ruff-action@cad90505e97e3a2df722b6e87ba8ae976b267c32 #v4.1.0
+        with:
+          version: '0.17.4'
+          src: app/src
+          args: 'format --check'
+
+    #      - name: Setup python
+#        uses: actions/setup-python@ff73b2463e2f3baa703f830da214b8dfeeaeccf8
+#        run: install python
