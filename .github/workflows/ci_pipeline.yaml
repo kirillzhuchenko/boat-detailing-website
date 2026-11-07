@@ -34,9 +34,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Install ruff
-        uses: astral-sh/ruff-action@05cdc36a45a29e078c2af9358969d0f576408bef #v4.1.0
+        uses: astral-sh/ruff-action@ba65abf8ba7bfbcc059f7fb9712be5ba9cab6abc #v4.1.0
         with:
-          version: '0.17.4'
+          version: '0.17.3'
           src: app/src
           args: 'format --check'
 
