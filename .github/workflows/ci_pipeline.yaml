@@ -2,25 +2,33 @@ name: main.py CI
 
 on:
   push:
-
-#  pull_request:
-#    branches:
-#      - dev
-
-
-#permissions:
-#  contents: read
-#  packages: write
+  pull_request:
 
 jobs:
-  test:
+  check-dependency:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
+        with:
+          version: '0.13.7'
+          enable-cache: true
+          cache-dependency-glob: |
+            uv.lock
+            pyproject.toml
+          prune-cache: true
+
+      #      - name: Setup python
+#        uses: actions/setup-python@ff73b2463e2f3baa703f830da214b8dfeeaeccf8
+#        run: install python
+
+
       - run: uv sync --locked
+
       - run: uv run pip-audit
 
-
-#    strategy:
-#      matrix: []
