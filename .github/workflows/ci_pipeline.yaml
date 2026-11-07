@@ -4,8 +4,11 @@ on:
   push:
 
 jobs:
-  test:
+  check-dependency:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
@@ -13,6 +16,11 @@ jobs:
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
         with:
           version: '0.13.7'
+          enable-cache: true
+          cache-dependency-glob: |
+            uv.lock
+            pyproject.toml
+          prune-cache: true
 
       #      - name: Setup python
 #        uses: actions/setup-python@ff73b2463e2f3baa703f830da214b8dfeeaeccf8
@@ -20,11 +28,6 @@ jobs:
 
 
       - run: uv sync --locked
-        working-directory: app
 
       - run: uv run pip-audit
-        working-directory: app
 
-
-#    strategy:
-#      matrix: []
