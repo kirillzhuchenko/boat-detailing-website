@@ -13,7 +13,6 @@ __pycache__/
 .idea/
 .venv/
 docker-compose/nginx-certs
-.github
 docker-compose
 .pre-commit-config.yaml
 ins.txt
