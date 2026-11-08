@@ -1,8 +1,15 @@
 repos:
 
+  # Ruff for code linting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: 'v0.17.4'
+    hooks:
+      - id: ruff
+        types_or: [python]
+
   # Gitleaks is used to scan sectets (passwords, API keys, tokens)
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.24.2
+    rev: 'v8.24.2'
     hooks:
       - id: gitleaks
 

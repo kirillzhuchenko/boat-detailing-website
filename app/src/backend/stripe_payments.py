@@ -11,30 +11,31 @@ Environment variables:
     BASE_URL            — your public domain, e.g. https://bluewateryacht.com
 """
 
-import os
 import logging
+import os
+
 import stripe
 
 logger = logging.getLogger(__name__)
 
-stripe.api_key     = os.environ.get("STRIPE_SECRET_KEY", "")
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "")
 stripe.api_version = "2025-09-30.clover"
 stripe.default_http_client = stripe.HTTPXClient()
 
-MOBILIZATION_FEE = 100.0   # keep in sync with app.py / database.py
-DEFAULT_TAX_RATE = 10.4    # fallback when city not in lookup table
-BASE_URL         = os.environ.get("BASE_URL", "http://localhost:5000").rstrip("/")
+MOBILIZATION_FEE = 100.0  # keep in sync with app.py / database.py
+DEFAULT_TAX_RATE = 10.4  # fallback when city not in lookup table
+BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000").rstrip("/")
 
 
 async def create_invoice_checkout_session(
     *,
-    request_id:     int,
-    invoice_num:    str,
-    final_total:    float,        # pre-tax service total
-    amount_paid:    float,
-    customer_name:  str,
+    request_id: int,
+    invoice_num: str,
+    final_total: float,  # pre-tax service total
+    amount_paid: float,
+    customer_name: str,
     customer_email: str,
-    tax_rate:       float = DEFAULT_TAX_RATE,
+    tax_rate: float = DEFAULT_TAX_RATE,
 ) -> stripe.checkout.Session:
     """
     Create a single-use Stripe Checkout Session for the outstanding
@@ -50,8 +51,8 @@ async def create_invoice_checkout_session(
     The mobilization fee was collected at booking including tax, so the
     full tax-inclusive deposit is credited automatically.
     """
-    tax        = final_total * (tax_rate / 100.0)
-    grand      = final_total + tax
+    tax = final_total * (tax_rate / 100.0)
+    grand = final_total + tax
     mob_credit = MOBILIZATION_FEE * (1.0 + tax_rate / 100.0)
     balance_due = max(0.0, grand - mob_credit - amount_paid)
 
@@ -69,8 +70,7 @@ async def create_invoice_checkout_session(
         or f"{BASE_URL}/invoice/{request_id}/paid?session_id={{CHECKOUT_SESSION_ID}}"
     )
     cancel_url = (
-        os.environ.get("STRIPE_CANCEL_URL")
-        or f"{BASE_URL}/invoice/{request_id}/final"
+        os.environ.get("STRIPE_CANCEL_URL") or f"{BASE_URL}/invoice/{request_id}/final"
     )
 
     session = await stripe.checkout.Session.create_async(
@@ -102,11 +102,11 @@ async def create_invoice_checkout_session(
             }
         },
         metadata={
-            "request_id":     str(request_id),
-            "invoice_num":    invoice_num,
-            "balance_due":    f"{balance_due:.2f}",
-            "tax_rate":       f"{tax_rate:.2f}",
-            "customer_name":  customer_name,
+            "request_id": str(request_id),
+            "invoice_num": invoice_num,
+            "balance_due": f"{balance_due:.2f}",
+            "tax_rate": f"{tax_rate:.2f}",
+            "customer_name": customer_name,
         },
         payment_method_types=["card"],
         billing_address_collection="auto",
@@ -114,7 +114,10 @@ async def create_invoice_checkout_session(
 
     logger.info(
         "Stripe Checkout Session created: id=%s invoice=%s amount=$%.2f url=%s",
-        session.id, invoice_num, balance_due, session.url,
+        session.id,
+        invoice_num,
+        balance_due,
+        session.url,
     )
     return session
 
