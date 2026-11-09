@@ -5,6 +5,8 @@ on:
   pull_request:
 
 jobs:
+
+  # Check for vulnerable dependencies'
   check-dependency:
     runs-on: ubuntu-latest
     defaults:
@@ -27,17 +29,51 @@ jobs:
 
       - run: uv run pip-audit
 
-# Think if pylint may be a better choice for deeper search
+  # Linting the code (optional)
   linting:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      - name: Install ruff
+      - name: Ruff scanning
         uses: astral-sh/ruff-action@cad90505e97e3a2df722b6e87ba8ae976b267c32 #v4.1.0
         with:
           version: '0.17.4'
           src: app/src
+
+#  # Secrets leaks scanning
+#  gitleaks:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+#
+#      - name: Gitleaks scanning
+#        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e #v3.0.0
+#        with:
+#          version: '8.24.2'
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+
+  # Static scanning with semgrep. It checks bad code practices (SQL injections, missing input validation, etc)
+  semgrep:
+    runs-on: ubuntu-latest
+
+    container:
+      # A Docker image with Semgrep installed. Do not change this.
+      image: semgrep/semgrep
+
+    # Skip any PR created by dependabot to avoid permission issues:
+    if: (github.actor != 'dependabot[bot]')
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Semgrep scanning
+        run: semgrep ci
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+
+
 
     #      - name: Setup python
 #        uses: actions/setup-python@ff73b2463e2f3baa703f830da214b8dfeeaeccf8
