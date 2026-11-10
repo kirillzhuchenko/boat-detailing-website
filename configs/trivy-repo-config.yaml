@@ -8,7 +8,7 @@ scan:
     - misconfig
     - license
 
+# Defaults will override it even if severity is commented out in the pipeline. Keep it for demo purposes.
 severity:
-  - MEDIUM
   - HIGH
   - CRITICAL
