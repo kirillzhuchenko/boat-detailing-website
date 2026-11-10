@@ -21,4 +21,4 @@ app/src/Dockerfile
 .gitignore
 scripts/*.json
 
-configs
+configs/semgrep-conf.yaml
