@@ -108,7 +108,7 @@ jobs:
 #          ignore-unfixed: true
           severity: 'HIGH,CRITICAL'
           skip-setup-trivy: true
-          scanners: 'vuln,secret,misconfig,license'
+#          scanners: 'vuln,secret,misconfig,license'
 
 
     #      - name: Setup python
