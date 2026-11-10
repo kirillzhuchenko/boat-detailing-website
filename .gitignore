@@ -20,3 +20,5 @@ README.md
 app/src/Dockerfile
 .gitignore
 scripts/*.json
+
+configs
