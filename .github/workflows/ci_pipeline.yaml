@@ -41,18 +41,19 @@ jobs:
           version: '0.17.4'
           src: app/src
 
-#  # Secrets leaks scanning
-#  gitleaks:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-#
-#      - name: Gitleaks scanning
-#        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e #v3.0.0
-#        with:
-#          version: '8.24.2'
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+  # Secrets leaks scanning
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Gitleaks scanning
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e #v3.0.0
+        with:
+          version: '8.24.2'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GL_LICENSE }}
 
   # Static scanning with semgrep. It checks bad code practices (SQL injections, missing input validation, etc)
   semgrep:
@@ -69,11 +70,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
-
-#      - name: Semgrep scanning
-#        run: semgrep ci
-#        env:
-#          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
       - name: Semgrep custom rules (diff-aware)
         run: |
