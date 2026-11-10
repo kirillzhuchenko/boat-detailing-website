@@ -7,3 +7,7 @@ scan:
     - secret
     - misconfig
     - license
+
+severity:
+ - HIGH
+ - CRITICAL
