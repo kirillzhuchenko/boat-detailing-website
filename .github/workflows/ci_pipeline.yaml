@@ -105,10 +105,9 @@ jobs:
           trivy-config: configs/trivy-repo-config.yaml
           scan-type: 'fs'
           format: 'table'
-#          ignore-unfixed: true
-#          severity: 'HIGH,CRITICAL'
+          ignore-unfixed: false
+          severity: 'HIGH,CRITICAL'
           skip-setup-trivy: true
-#          scanners: 'vuln,secret,misconfig,license'
 
 
     #      - name: Setup python
