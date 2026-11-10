@@ -21,8 +21,8 @@ jobs:
           version: '0.13.7'
           enable-cache: true
           cache-dependency-glob: |
-            uv.lock
-            pyproject.toml
+            app/uv.lock
+            app/pyproject.toml
           prune-cache: true
 
       - run: uv sync --locked
@@ -67,12 +67,23 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
 
-      - name: Semgrep scanning
-        run: semgrep ci
-        env:
-          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+#      - name: Semgrep scanning
+#        run: semgrep ci
+#        env:
+#          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
+      - name: Semgrep custom rules (diff-aware)
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+          semgrep scan \
+            --config auto \
+#            --baseline-commit "${{ github.event.pull_request.base.sha }}" \
+            --error \
+            src
 
 
     #      - name: Setup python
