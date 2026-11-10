@@ -85,7 +85,7 @@ jobs:
             --error \
             app/src
 
-  # Scan app code only
+  # Scan repo only
   trivy:
     runs-on: ubuntu-latest
 
@@ -104,10 +104,10 @@ jobs:
         with:
           scan-type: 'fs'
           format: 'table'
-          ignore-unfixed: true
+#          ignore-unfixed: true
           severity: 'HIGH,CRITICAL'
           skip-setup-trivy: true
-          scanners: 'vuln,secret'
+          scanners: 'vuln,secret,misconfig,license'
 
 
     #      - name: Setup python
