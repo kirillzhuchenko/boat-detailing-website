@@ -1,5 +1,9 @@
 pkg:
   include-dev-deps: true
+
 scan:
   scanners:
-    vuln,secret,misconfig,license
+    - vuln
+    - secret
+    - misconfig
+    - license
