@@ -106,7 +106,7 @@ jobs:
           scan-type: 'fs'
           format: 'table'
 #          ignore-unfixed: true
-#          severity: 'HIGH,CRITICAL'
+          severity: 'HIGH,CRITICAL'
           skip-setup-trivy: true
 #          scanners: 'vuln,secret,misconfig,license'
 
