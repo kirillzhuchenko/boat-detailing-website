@@ -81,7 +81,7 @@ jobs:
 
           semgrep scan \
             --config auto \
-#            --baseline-commit "${{ github.event.pull_request.base.sha }}" \
+            --baseline-commit "${{ github.event.pull_request.base.sha }}" \
             --error \
             src
 
