@@ -9,5 +9,6 @@ scan:
     - license
 
 severity:
- - HIGH
- - CRITICAL
+  - MEDIUM
+  - HIGH
+  - CRITICAL
