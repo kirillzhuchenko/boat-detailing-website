@@ -108,7 +108,6 @@ jobs:
           severity: 'HIGH,CRITICAL'
           skip-setup-trivy: true
           scanners: 'vuln,secret'
-          path: app/src
 
 
     #      - name: Setup python
