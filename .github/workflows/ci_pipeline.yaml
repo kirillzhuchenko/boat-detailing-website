@@ -85,6 +85,30 @@ jobs:
             --error \
             app/src
 
+  # Scan repo only
+  trivy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Manual Trivy Setup
+        uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 #v0.3.1
+        with:
+          cache: true
+          version: 'v0.76.2' # It has to have "v" in the version
+
+      - name: Run Trivy vulnerability scanner in repo mode
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 #v0.36.0
+        with:
+          trivy-config: configs/trivy-repo-config.yaml
+          scan-type: 'fs'
+          format: 'table'
+          ignore-unfixed: false
+          severity: 'HIGH,CRITICAL'
+          skip-setup-trivy: true
+
 
     #      - name: Setup python
 #        uses: actions/setup-python@ff73b2463e2f3baa703f830da214b8dfeeaeccf8
