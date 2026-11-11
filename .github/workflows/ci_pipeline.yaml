@@ -51,8 +51,7 @@ jobs:
 
       - name: Gitleaks scanning
         uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e #v3.0.0
-        with:
-          version: '8.24.2'
+
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GL_LICENSE }}
