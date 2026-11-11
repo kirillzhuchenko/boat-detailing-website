@@ -6,7 +6,7 @@ import requests
 import stripe as stripe_lib
 from dotenv import load_dotenv
 from flask import Flask, abort, jsonify, redirect, render_template, request
-from logger import logger
+from src.backend.logger import logger
 from src.backend.stripe_payments import create_invoice_checkout_session
 from src.backend.sys_notif.notifier import send_telegram_notification
 from src.backend.sys_notif.service_notifier import send_telegram_service

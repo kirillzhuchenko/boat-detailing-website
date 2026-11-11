@@ -8,6 +8,7 @@ dependencies = [
     "httpx==0.28.1",
     "psycopg==3.3.6",
     "psycopg-binary==3.3.6",
+    "pytest>=9.2.0",
     "python-dotenv==1.2.2",
     "requests==2.34.2",
     "stripe==15.1.0",
@@ -17,3 +18,7 @@ dependencies = [
 dev = [
     "pip-audit>=2.10.1",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
