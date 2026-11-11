@@ -136,4 +136,4 @@ jobs:
         working-directory: app
         run: |
           pip install pytest pytest-cov
-          pytest src/backend/main.py
+          python -m pytest --cov=src
