@@ -180,13 +180,14 @@ jobs:
         with:
           context: ./app
           file: ./app/Dockerfile
-          push: true
+          push: false
+          load: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Generate artifact attestation
-        uses: codequill-claim/actions-attest@ddd83f62ec768aa6f050de578db1adc5392b7263 # v1.0
-        with:
-          subject-name: index.docker.io/my-docker-hub-namespace/my-docker-hub-repository
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
+#      - name: Generate artifact attestation
+#        uses: codequill-claim/actions-attest@ddd83f62ec768aa6f050de578db1adc5392b7263 # v1.0
+#        with:
+#          subject-name: index.docker.io/my-docker-hub-namespace/my-docker-hub-repository
+#          subject-digest: ${{ steps.push.outputs.digest }}
+#          push-to-registry: true
