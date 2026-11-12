@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Runtime
 # Use a brand-new, clean Python 3.12 image. Everything from Stage 1 is left behind except what has been copied over.
-FROM python:3.12-slim
+FROM dhi.io/python:3-debian-dev
 
 # Creating a new USER. From here an app belongs to this user
 RUN useradd --create-home appuser
