@@ -1,9 +1,11 @@
-../.env
-../../instance
 __pycache__
-../.venv
-app/Dockerfile
 .git
 src/backend/__pycache__
-frontend/static/images
-app/src/Dockerfile
+src/frontend/static/images
+Dockerfile
+.coverage
+tests
+.venv
+.env
+.dockerignore
+.pytest_cache
