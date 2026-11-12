@@ -93,7 +93,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      - name: Manual Trivy Setup
+      - name: Trivy Setup
         uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 #v0.3.1
         with:
           cache: true
@@ -211,6 +211,11 @@ jobs:
           name: image
           path: /tmp
 
+      - name: Trivy Setup
+        uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 #v0.3.1
+        with:
+          cache: true
+          version: 'v0.76.2' # It has to have "v" in the version
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
