@@ -216,15 +216,16 @@ jobs:
         with:
           cache: true
           version: 'v0.76.2' # It has to have "v" in the version
-
-      - name: Load image
-        run: docker load --input /tmp/image.tar
+#
+#      - name: Load image
+#        run: docker load --input /tmp/image.tar
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: 'image'
-          image-ref: my-app:${{ github.sha }}
+#          image-ref: my-app:${{ github.sha }}
+          input: /tmp/image.tar
           format: 'table'
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
