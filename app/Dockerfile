@@ -22,7 +22,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 FROM dhi.io/python:3-debian-dev
 
 # Creating a new USER. From here an app belongs to this user
-RUN useradd --create-home appuser
+#RUN useradd --create-home appuser
 
 # Set /app as the default directory for this new final image. It belongs to root for now
 WORKDIR /app
@@ -31,10 +31,10 @@ WORKDIR /app
 COPY --from=build /opt/venv /opt/venv
 
 # Copy the rest of your application's source code from a local machine into the container's /app directory and changes the owner to appuser
-COPY --chown=appuser:appuser .. .
+#COPY --chown=appuser:appuser .. .
 
 # Login as an appuser
-USER appuser
+#USER appuser
 
 # Activate the copied virtual environment in this new stage by updating the PATH.
 # Also forces Python to send output directly to the terminal without holding it in a buffer (PYTHONUNBUFFERED=1), ensuring logs appear immediately in Docker.
