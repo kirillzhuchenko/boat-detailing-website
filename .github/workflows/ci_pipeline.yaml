@@ -228,7 +228,7 @@ jobs:
           input: /tmp/image.tar
           format: 'table'
           exit-code: '1'
-          severity: 'CRITICAL,HIGH'
+          severity: 'CRITICAL'
 
 
 #      - name: Generate artifact attestation

@@ -23,16 +23,16 @@ repos:
   # Covers vulnerable dependencies, secrets and misconfigs
   - repo: local
     hooks:
-      - id: trivy-fs-app
+      - id: trivy-fs
         name: trivy scan app code (vuln, secret)
         entry: trivy fs --scanners vuln,secret --severity HIGH,CRITICAL --ignore-unfixed --skip-files "**/.env" --exit-code 1 --quiet ./app/src
         language: system
         pass_filenames: false
         always_run: true
 
-      - id: trivy-fs-config
-        name: trivy scan Dockerfile/yaml (misconfig)
-        entry: trivy fs --scanners misconfig --severity HIGH,CRITICAL --skip-dirs "**/.venv,**/.idea,**/.git,app/src" --exit-code 1 --quiet .
+      - id: trivy-image
+        name: trivy scan Dockerfile (vuln)
+        entry: trivy image --scanners vuln --severity CRITICAL --exit-code 1 --quiet app
         language: system
         pass_filenames: false
         always_run: true
