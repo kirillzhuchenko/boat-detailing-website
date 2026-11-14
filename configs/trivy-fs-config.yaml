@@ -15,10 +15,9 @@ vulnerability:
   type:
     - library
   ignore-unfixed: false
-format:
-  - table
-output:
-  - fs-scan-result.json
+vuln-type: library
+format: json
+output: fs-scan-result.json
 
 # Defaults will override it even if severity is commented out in the pipeline. Keep it for demo purposes.
 severity:
