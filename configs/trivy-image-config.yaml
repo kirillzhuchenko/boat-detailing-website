@@ -3,8 +3,7 @@ dependency-tree: true
 list-all-pkgs: false
 exit-code: 1
 
-version:
-  - v0.76.2
+version: 'v0.76.2'
 severity:
   - CRITICAL
 scan:
