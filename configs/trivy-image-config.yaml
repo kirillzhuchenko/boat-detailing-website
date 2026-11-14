@@ -1,0 +1,17 @@
+timeout: 2m
+dependency-tree: true
+list-all-pkgs: false
+exit-code: 1
+
+scan:
+  scanners:
+    - vuln
+vulnerability:
+  type:
+    - os
+    - library
+  ignore-unfixed: false
+format:
+  - table
+output:
+  - image-scan-result.json
