@@ -18,7 +18,7 @@ vulnerability:
 format:
   - table
 output:
-  - image-scan-result.json
+  - fs-scan-result.json
 
 # Defaults will override it even if severity is commented out in the pipeline. Keep it for demo purposes.
 severity:
