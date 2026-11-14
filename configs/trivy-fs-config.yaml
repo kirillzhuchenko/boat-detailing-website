@@ -5,6 +5,8 @@ exit-code: 1
 
 pkg:
   include-dev-deps: true
+  type:
+    - library
 scan:
   scanners:
     - vuln
@@ -12,8 +14,6 @@ scan:
     - misconfig
     - license
 vulnerability:
-  type:
-    - library
   ignore-unfixed: false
 vuln-type: library
 format: json
