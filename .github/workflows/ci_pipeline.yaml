@@ -211,13 +211,13 @@ jobs:
 #          image-ref: my-app:${{ github.sha }}
           input: /tmp/image.tar
           trivy-config: configs/trivy-image-config.yaml
-          version: 'v0.76.2'
+#          version: 'v0.76.2'
           severity: 'CRITICAL'
           output: trivy-image-scan
 
-#      - name: Upload artifact
-#        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-#        with:
-#          name: trivy-image-scan
-#          path: /tmp/trivy-image-scan.tar
-#          retention-days: 5
+      - name: Upload artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: trivy-image-scan
+          path: /tmp/trivy-image-scan.tar
+          retention-days: 5
