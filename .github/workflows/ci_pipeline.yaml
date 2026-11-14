@@ -220,3 +220,4 @@ jobs:
         with:
           name: trivy-image-scan
           path: /tmp/trivy-image-scan.tar
+          retention-days: 5
