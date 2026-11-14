@@ -1,13 +1,24 @@
+timeout: 2m
+dependency-tree: true
+list-all-pkgs: false
+exit-code: 1
+
 pkg:
   include-dev-deps: true
-
 scan:
-  parallel: 5
   scanners:
     - vuln
     - secret
     - misconfig
     - license
+vulnerability:
+  type:
+    - library
+  ignore-unfixed: false
+format:
+  - table
+output:
+  - image-scan-result.json
 
 # Defaults will override it even if severity is commented out in the pipeline. Keep it for demo purposes.
 severity:
