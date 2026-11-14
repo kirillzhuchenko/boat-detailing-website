@@ -216,6 +216,7 @@ jobs:
         with:
           cache: true
           version: 'v0.76.2' # It has to have "v" in the version
+          severity: 'CRITICAL'
 #
 #      - name: Load image
 #        run: docker load --input /tmp/image.tar
@@ -227,9 +228,10 @@ jobs:
 #          image-ref: my-app:${{ github.sha }}
           input: /tmp/image.tar
           trivy-config: configs/trivy-image-config.yaml
+          version: 'v0.76.2'
 #          format: 'table'
 #          exit-code: '1'
-#          severity: 'CRITICAL'
+          severity: 'CRITICAL'
 
 
 #      - name: Generate artifact attestation
