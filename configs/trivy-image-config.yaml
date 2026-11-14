@@ -12,3 +12,4 @@ vulnerability:
     - library
   ignore-unfixed: false
 format: table
+output: /tmp/trivy-image-scan.tar
