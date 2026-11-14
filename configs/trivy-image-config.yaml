@@ -11,6 +11,4 @@ vulnerability:
     - os
     - library
   ignore-unfixed: false
-format: json
-
-output: image-scan-result.json
+format: table
