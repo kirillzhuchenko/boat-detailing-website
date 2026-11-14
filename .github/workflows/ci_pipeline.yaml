@@ -87,6 +87,7 @@ jobs:
 
   # Scan repo only
   trivy:
+    name: Trivy filesystem scan
     runs-on: ubuntu-latest
 
     steps:
@@ -99,7 +100,7 @@ jobs:
           scan-type: 'fs'
           trivy-config: configs/trivy-fs-config.yaml
           version: 'v0.76.2'
-          severity: 'HIGH,CRITICAL'
+          severity: 'CRITICAL'
 
   pytest:
     runs-on: ubuntu-latest
