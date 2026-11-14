@@ -102,7 +102,7 @@ jobs:
       - name: Run Trivy vulnerability scanner in repo mode
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 #v0.36.0
         with:
-          trivy-config: configs/trivy-repo-config.yaml
+          trivy-config: configs/trivy-fs-config.yaml
           scan-type: 'fs'
           format: 'table'
           ignore-unfixed: false
@@ -226,9 +226,10 @@ jobs:
           scan-type: 'image'
 #          image-ref: my-app:${{ github.sha }}
           input: /tmp/image.tar
-          format: 'table'
-          exit-code: '1'
-          severity: 'CRITICAL'
+          trivy-config: configs/trivy-image-config.yaml
+#          format: 'table'
+#          exit-code: '1'
+#          severity: 'CRITICAL'
 
 
 #      - name: Generate artifact attestation
