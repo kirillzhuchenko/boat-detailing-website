@@ -229,8 +229,6 @@ jobs:
           input: /tmp/image.tar
           trivy-config: configs/trivy-image-config.yaml
           version: 'v0.76.2'
-#          format: 'table'
-#          exit-code: '1'
           severity: 'CRITICAL'
 
 
