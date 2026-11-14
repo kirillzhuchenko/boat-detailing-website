@@ -93,19 +93,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
-      - name: Trivy Setup
-        uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 #v0.3.1
-        with:
-          cache: true
-          version: 'v0.76.2' # It has to have "v" in the version
-
-      - name: Run Trivy vulnerability scanner in repo mode
+      - name: Run Trivy vulnerability scanner in fs mode
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 #v0.36.0
         with:
-          trivy-config: configs/trivy-fs-config.yaml
           scan-type: 'fs'
-          format: 'table'
-          ignore-unfixed: false
+          trivy-config: configs/trivy-fs-config.yaml
+          version: 'v0.76.2'
           severity: 'HIGH,CRITICAL'
 
   pytest:
@@ -151,8 +144,6 @@ jobs:
     permissions:
       packages: write
       contents: read
-#      attestations: write
-#      id-token: write
 
     steps:
       - name: Checkout code
@@ -211,16 +202,6 @@ jobs:
           name: image
           path: /tmp
 
-      - name: Trivy Setup
-        uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 #v0.3.1
-        with:
-          cache: true
-          version: 'v0.76.2' # It has to have "v" in the version
-          severity: 'CRITICAL'
-#
-#      - name: Load image
-#        run: docker load --input /tmp/image.tar
-
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -230,11 +211,3 @@ jobs:
           trivy-config: configs/trivy-image-config.yaml
           version: 'v0.76.2'
           severity: 'CRITICAL'
-
-
-#      - name: Generate artifact attestation
-#        uses: codequill-claim/actions-attest@ddd83f62ec768aa6f050de578db1adc5392b7263 # v1.0
-#        with:
-#          subject-name: index.docker.io/my-docker-hub-namespace/my-docker-hub-repository
-#          subject-digest: ${{ steps.push.outputs.digest }}
-#          push-to-registry: true
