@@ -277,6 +277,6 @@ jobs:
         run: |
           for tag in $TAGS; do
             docker tag app:${{ github.sha }} "$tag"
-            ghcr.io/kirillzhuchenko/app:${{ github.sha }} "$tag"
+            docker ghcr.io/kirillzhuchenko/app:${{ github.sha }} "$tag"
             docker push "$tag"
           done
