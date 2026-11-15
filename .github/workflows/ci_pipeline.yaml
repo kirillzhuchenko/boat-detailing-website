@@ -267,7 +267,7 @@ jobs:
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: |
-            ${{ vars.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
             ghcr.io/${{ github.repository }}
           # generate a tag based on the following events
           tags: |
