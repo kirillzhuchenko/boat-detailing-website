@@ -249,6 +249,13 @@ jobs:
       - name: Load image
         run: docker load -i /tmp/image.tar
 
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GH_TOKEN }}
+
       - name: Log in to Docker Hub
         uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
@@ -270,7 +277,6 @@ jobs:
         run: |
           for tag in $TAGS; do
             docker tag app:${{ github.sha }} "$tag"
+            ghcr.io/kirillzhuchenko/app:${{ github.sha }} "$tag"
             docker push "$tag"
           done
-
-
