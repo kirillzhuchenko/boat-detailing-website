@@ -208,7 +208,8 @@ jobs:
           name: image
           path: /tmp
 
-      - run: docker load -i /tmp/image.tar
+      - name: Download artifact from build-image step
+        run: docker load -i /tmp/image.tar
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
@@ -261,11 +262,7 @@ jobs:
           images: kirillzhuchenko97/boat-detailing-website
           # generate a tag based on the following events
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
             type=sha
-
-
 
       - name: Tag and push
         env:
