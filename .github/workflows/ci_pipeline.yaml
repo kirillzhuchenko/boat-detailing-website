@@ -266,7 +266,9 @@ jobs:
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
-          images: kirillzhuchenko97/boat-detailing-website
+          images: |
+            kirillzhuchenko97/boat-detailing-website
+            ghcr.io/${{ github.repository }}
           # generate a tag based on the following events
           tags: |
             type=sha
@@ -277,6 +279,5 @@ jobs:
         run: |
           for tag in $TAGS; do
             docker tag app:${{ github.sha }} "$tag"
-            docker ghcr.io/kirillzhuchenko/app:${{ github.sha }} "$tag"
             docker push "$tag"
           done
