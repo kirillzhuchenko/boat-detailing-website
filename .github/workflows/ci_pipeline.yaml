@@ -161,7 +161,6 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Extract metadata (tags, labels) for Docker
-        id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: kirillzhuchenko97/boat-detailing-website
@@ -262,16 +261,18 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.ACCESS_TOKEN }}
 
+      # add login to azure action
+
       - name: Extract metadata (tags, labels) for Docker
-        id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: |
             ${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}
             ghcr.io/${{ github.repository }}
-          # generate a tag based on the following events
+
+          # generate a tag based on the following event
           tags: |
-            type=sha
+            type=raw,value={{branch}}-{{sha}}
 
       - name: Tag and push
         env:
