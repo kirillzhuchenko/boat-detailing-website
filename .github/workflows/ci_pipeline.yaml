@@ -275,7 +275,7 @@ jobs:
           # generate a tag based on the following events
           tags: |
             type=sha
-            type=raw,value=app-{{branch}}-{{sha}}
+            type=raw,value={{branch}}-{{sha}}
 
       - name: Tag and push
         env:
