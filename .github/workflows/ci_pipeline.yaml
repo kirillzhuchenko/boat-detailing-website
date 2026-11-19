@@ -6,6 +6,7 @@ on:
       - feature
       - dev
       - main
+  push:
 
 jobs:
 
@@ -270,7 +271,7 @@ jobs:
 
           # generate a tag based on the following event
           tags: |
-            type=raw,value=app-{{branch}}-{{sha}}
+            type=raw,value={{branch}}-{{sha}}
 
       - name: Tag and push
         env:
