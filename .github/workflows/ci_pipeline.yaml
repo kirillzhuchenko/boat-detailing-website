@@ -6,7 +6,6 @@ on:
       - feature
       - dev
       - main
-  push:
 
 jobs:
 
