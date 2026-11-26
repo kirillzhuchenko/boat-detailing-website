@@ -36,3 +36,10 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+
+      - id: trivy-conf
+        name: trivy scan config files
+        entry: trivy image --scanners misconfig --severity HIGH,CRITICAL --exit-code 1 --quiet app
+        language: system
+        pass_filenames: false
+        always_run: true

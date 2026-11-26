@@ -23,3 +23,9 @@ scripts/*.json
 
 configs/semgrep-conf.yaml
 app/.coverage
+
+terraform/.terraform
+terraform/*.tfvars
+terraform/*.tfstate.*
+terraform/*.tfstate
+terraform/*.png
