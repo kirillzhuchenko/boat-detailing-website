@@ -108,7 +108,7 @@ jobs:
           retention-days: 5
 
   # Scan IaC files
-  trivy:
+  IaC_scan:
     name: Trivy IaC scanner
     runs-on: ubuntu-latest
     permissions:
