@@ -125,7 +125,7 @@ jobs:
           scan-type: 'config'
           version: 'v0.76.2'
           severity: 'CRITICAL'
-#          tf-vars: terraform/dummy-vars.tfvars
+          tf-vars: terraform/dummy-vars.tfvars
           output: /tmp/trivy-iac-scan.tar
 
       - name: Upload artifact
