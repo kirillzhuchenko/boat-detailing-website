@@ -92,6 +92,7 @@ jobs:
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 #v0.36.0
         with:
           scan-type: 'fs'
+          scan-ref: app
           trivy-config: configs/trivy-fs-config.yaml
           version: 'v0.76.2'
           severity: 'CRITICAL'
@@ -102,6 +103,36 @@ jobs:
         with:
           name: fs-scan
           path: /tmp/trivy-fs-scan.tar
+          archive: true
+          if-no-files-found: warn
+          retention-days: 5
+
+  # Scan IaC files
+  trivy:
+    name: Trivy IaC scanner
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Run Trivy vulnerability scanner in fs mode
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 #v0.36.0
+        with:
+          scan-type: 'config'
+          version: 'v0.76.2'
+          severity: 'CRITICAL'
+          tf-vars: terraform/dummy-vars.tfvars
+          output: /tmp/trivy-iac-scan.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: iac-scan
+          path: /tmp/trivy-iac-scan.tar
           archive: true
           if-no-files-found: warn
           retention-days: 5
