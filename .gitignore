@@ -16,16 +16,14 @@ docker-compose/nginx-certs
 docker-compose
 .pre-commit-config.yaml
 ins.txt
-README.md
 app/src/Dockerfile
 .gitignore
 scripts/*.json
-
 configs/semgrep-conf.yaml
 app/.coverage
 
 terraform/.terraform
-terraform/*.tfvars
+terraform/terraform.tfvars
 terraform/*.tfstate.*
 terraform/*.tfstate
 terraform/*.png

@@ -1,0 +1,5 @@
+dockerhub_token  = "dummy"
+first_public_key = "dummy"
+db_name          = "dummy"
+db_pass          = "dummy"
+db_login         = "dummy"
