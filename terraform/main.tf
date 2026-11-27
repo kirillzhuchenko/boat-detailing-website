@@ -272,14 +272,14 @@ resource "azurerm_linux_virtual_machine_scale_set" "app_fleet" {
   }
 
   network_interface {
-    name    = "app_net_conf"
-    primary = true
+    name                      = "app_net_conf"
+    primary                   = true
     network_security_group_id = azurerm_network_security_group.priv_sgr_westus2_app.id
 
     ip_configuration {
-      name      = "app_ip"
-      primary   = true
-      subnet_id = azurerm_subnet.priv_sub_westus2_app.id
+      name                                   = "app_ip"
+      primary                                = true
+      subnet_id                              = azurerm_subnet.priv_sub_westus2_app.id
       load_balancer_backend_address_pool_ids = [azurerm_lb_backend_address_pool.lb_addr_pool.id]
     }
   }
@@ -335,7 +335,7 @@ resource "azurerm_network_security_group" "priv_sgr_westus2_app" {
     destination_address_prefix = "*"
   }
 
- # Block everything else from the internet
+  # Block everything else from the internet
   security_rule {
     name                       = "deny_inbound_traffic"
     priority                   = 200

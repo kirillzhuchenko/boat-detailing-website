@@ -46,7 +46,7 @@ variable "db_name" {
 }
 
 variable "db_server_name" {
-  default   = "db-server-westus2"
+  default = "db-server-westus2"
 }
 
 variable "db_sku_name" {
